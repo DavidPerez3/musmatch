@@ -1,0 +1,3 @@
+-- Deprecated file kept for backwards compatibility.
+-- Function `create_match_with_partner(...)` is now defined in:
+--   supabase/migrations/20260513_phase0_alignment.sql

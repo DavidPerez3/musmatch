@@ -1,0 +1,5 @@
+-- Deprecated file kept for backwards compatibility.
+-- Source of truth now lives in:
+--   supabase/migrations/20260513_phase0_alignment.sql
+--
+-- Apply migrations in order instead of executing this file directly.

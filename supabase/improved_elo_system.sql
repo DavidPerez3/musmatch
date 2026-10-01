@@ -1,0 +1,7 @@
+-- Deprecated file kept for backwards compatibility.
+-- ELO logic is now defined in:
+--   supabase/migrations/20260513_phase0_alignment.sql
+--
+-- Functions:
+--   apply_match_elo(p_match_id, p_winner)
+--   confirm_match_and_update_elo(match_id)
