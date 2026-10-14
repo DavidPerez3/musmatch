@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+type PresenceTokenStatus = { token: string | null; expires_at: string | null; next_refresh_at: string | null };
+
 type Team = "A" | "B";
 
 type Event = {
@@ -146,7 +148,7 @@ export default function EventDetail() {
       }
 
       const map: Record<string, ProfileMini> = {};
-      (profs ?? []).forEach((p: any) => (map[p.id] = p));
+      (profs ?? []).forEach((p: ProfileMini) => (map[p.id] = p));
       setProfiles(map);
     } else {
       setProfiles({});
@@ -164,25 +166,6 @@ export default function EventDetail() {
       .delete()
       .eq("event_id", id)
       .eq("user_id", me);
-
-    setBusy(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await load();
-  }
-
-  async function joinTeam(team: Team) {
-    if (!me || !myParticipant) return;
-
-    setBusy(true);
-    const { error } = await supabase
-      .from("event_participants")
-      .update({ team })
-      .eq("id", myParticipant.id);
 
     setBusy(false);
 
@@ -327,17 +310,7 @@ export default function EventDetail() {
     if (!me) return;
     setBusy(true);
 
-    const { error } = await supabase
-      .from("events")
-      .update({
-        winner_team: null,
-        result_score: null,
-        result_proposed_by: null,
-        result_status: null,
-      })
-      .eq("id", id)
-      .eq("result_status", "PENDING")
-      .eq("result_proposed_by", me);
+    const { error } = await supabase.rpc("withdraw_legacy_result", { p_event_id: id });
 
     setBusy(false);
 
@@ -361,7 +334,7 @@ export default function EventDetail() {
       return;
     }
 
-    const payload = (data as any) || {};
+    const payload = (data as PresenceTokenStatus) || {};
     setMyPresenceCode(payload.token ?? null);
     setMyPresenceExpiresAt(payload.expires_at ?? null);
     setMyPresenceNextRefreshAt(payload.next_refresh_at ?? null);
@@ -375,7 +348,7 @@ export default function EventDetail() {
     if (error) {
       return;
     }
-    const payload = (data as any) || {};
+    const payload = (data as PresenceTokenStatus) || {};
     setMyPresenceCode(payload.token ?? null);
     setMyPresenceExpiresAt(payload.expires_at ?? null);
     setMyPresenceNextRefreshAt(payload.next_refresh_at ?? null);
@@ -809,7 +782,7 @@ export default function EventDetail() {
           <p className="mt-1 text-sm text-white/70">Tu equipo ya envio el resultado. Falta el equipo rival.</p>
           {pendingDeadlineText && (
             <p className="mt-1 text-sm text-white/70">
-              Si no responden antes de {pendingDeadlineText}, se confirmara automaticamente tu reporte.
+              Si no responden antes de {pendingDeadlineText}, pasara a revision sin modificar el ELO.
             </p>
           )}
         </div>
@@ -1005,15 +978,3 @@ function TeamBox({
     </div>
   );
 }
-
-// Tailwind helper classes (sin tocar config)
-const btnBase =
-  "w-full rounded-xl px-3 py-2 font-semibold transition disabled:opacity-50";
-
-const btnPrimary = `${btnBase} bg-mm-gold text-mm-bg hover:opacity-90`;
-const btnSecondary = `${btnBase} bg-white/10 text-white hover:bg-white/20`;
-
-// @ts-ignore
-(globalThis as any).btn_primary = btnPrimary;
-// @ts-ignore
-(globalThis as any).btn_secondary = btnSecondary;

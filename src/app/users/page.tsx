@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
 
 type User = {
     id: string;
@@ -18,11 +17,7 @@ export default function UsersPage() {
     const [sentRequests, setSentRequests] = useState<string[]>([]);
     const [busy, setBusy] = useState(false);
 
-    useEffect(() => {
-        loadMyFriends();
-    }, []);
-
-    async function loadMyFriends() {
+    const loadMyFriends = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
@@ -32,7 +27,7 @@ export default function UsersPage() {
             .select("friend_id")
             .eq("user_id", user.id);
 
-        setMyFriends((friends || []).map((f: any) => f.friend_id));
+        setMyFriends((friends || []).map((f: { friend_id: string }) => f.friend_id));
 
         // Load sent requests
         const { data: requests } = await supabase
@@ -41,8 +36,8 @@ export default function UsersPage() {
             .eq("from_user_id", user.id)
             .eq("status", "PENDING");
 
-        setSentRequests((requests || []).map((r: any) => r.to_user_id));
-    }
+        setSentRequests((requests || []).map((r: { to_user_id: string }) => r.to_user_id));
+    }, []);
 
     async function searchUsers() {
         if (!searchQuery.trim()) {
@@ -84,6 +79,10 @@ export default function UsersPage() {
         if (sentRequests.includes(userId)) return "pending";
         return "add";
     }
+
+    useEffect(() => {
+        void supabase.auth.getSession().then(() => loadMyFriends());
+    }, [loadMyFriends]);
 
     return (
         <main className="mx-auto max-w-4xl px-4 py-8">

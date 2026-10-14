@@ -169,7 +169,7 @@ export default function Home() {
                 <label className="text-sm text-white/70">Tipo</label>
                 <select
                   value={filters.matchType}
-                  onChange={(e) => setFilters({ ...filters, matchType: e.target.value as any })}
+                  onChange={(e) => setFilters({ ...filters, matchType: e.target.value as Filters["matchType"] })}
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="ALL">Todas</option>
@@ -183,7 +183,7 @@ export default function Home() {
                 <label className="text-sm text-white/70">Parejas</label>
                 <select
                   value={filters.pairMode}
-                  onChange={(e) => setFilters({ ...filters, pairMode: e.target.value as any })}
+                  onChange={(e) => setFilters({ ...filters, pairMode: e.target.value as Filters["pairMode"] })}
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="ALL">Todas</option>
@@ -197,7 +197,7 @@ export default function Home() {
                 <label className="text-sm text-white/70">Estado</label>
                 <select
                   value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value as Filters["status"] })}
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="ALL">Todos</option>

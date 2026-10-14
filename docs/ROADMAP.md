@@ -107,3 +107,8 @@ Pendiente para escalado (no bloqueante para MVP):
 1. PWA avanzada (offline real y push).
 2. Expansion geolocalizada multi-ciudad.
 3. Ajuste dinamico de reglas con datos en produccion.
+
+
+## Actualización 2026-10-14
+
+Fase 0 de preparación para el piloto: permisos por columna, allowlist RPC, protección de vistas, ELO idempotente, disputa neutral por timeout, pruebas PostgreSQL aisladas y CI por push/PR. Ver PHASE_0.md. La navegación responsive es la siguiente fase; el QR visual aún no está implementado. El scheduler de timeout y la protección administrativa de main requieren configuración aparte.

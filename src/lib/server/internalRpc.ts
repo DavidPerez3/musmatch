@@ -5,7 +5,7 @@ export async function callInternalRpc<T>(
   params?: Record<string, unknown>
 ): Promise<T> {
   const supabase = getSupabaseAdmin();
-  const { data, error } = await (supabase as any).rpc(fn, params ?? {});
+  const { data, error } = await supabase.rpc(fn, params ?? {});
   if (error) {
     throw new Error(error.message);
   }
