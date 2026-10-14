@@ -385,3 +385,8 @@ Objetivo:
 ## 2026-10-14 — GitHub Pages y PWA
 
 Exportación estática con base /musmatch, detalle de partida por query, rutas OAuth corregidas, API interna preservada fuera del App Router, iconos PWA dimensionados, service worker limitado a MusMatch y aviso offline. Workflow con validación en PR y despliegue solo desde main. Build estático y TypeScript comprobados localmente con configuración pública de prueba. Backend activo, permisos y cron requieren validación independiente.
+
+
+## 2026-10-14 — Fase 0: seguridad y CI
+
+Migración versionada para permisos de perfiles/partidas, RPC allowlist, vistas con RLS, capacidad de equipos, invalidación de presencia, ELO aplicado una sola vez y timeout neutral con revisión. Retirada legacy vía RPC. Lint corregido sin desactivar reglas; TypeScript y build obligatorio. Tests con seis usuarios ficticios en PostgreSQL aislado, esquema limpio y variante heredada cloud; validación de export PWA. Ver PHASE_0.md para alcance y limitaciones.

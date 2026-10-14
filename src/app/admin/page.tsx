@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -46,11 +46,40 @@ export default function AdminPage() {
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [busy, setBusy] = useState(false);
 
-    useEffect(() => {
-        checkAdmin();
+    const loadDisputedMatches = useCallback(async () => {
+        const { data, error } = await supabase
+            .from("events")
+            .select("id, title, winner_team, result_score, result_proposed_by, created_at")
+            .eq("result_status", "DISPUTED")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            alert(error.message);
+            return;
+        }
+
+        setDisputedMatches(data as DisputedMatch[]);
     }, []);
 
-    async function checkAdmin() {
+    const loadPresenceOverview = useCallback(async () => {
+        const { data, error } = await supabase
+            .from("admin_event_presence_overview")
+            .select("*")
+            .eq("match_type", "COMPETITIVE")
+            .in("status", ["OPEN", "FULL", "CLOSED"])
+            .order("pending_checkins", { ascending: false })
+            .order("starts_at", { ascending: true })
+            .limit(20);
+
+        if (error) {
+            alert(error.message);
+            return;
+        }
+
+        setPresenceOverview((data || []) as PresenceOverview[]);
+    }, []);
+
+    const checkAdmin = useCallback(async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -74,40 +103,7 @@ export default function AdminPage() {
         await loadDisputedMatches();
         await loadPresenceOverview();
         setLoading(false);
-    }
-
-    async function loadDisputedMatches() {
-        const { data, error } = await supabase
-            .from("events")
-            .select("id, title, winner_team, result_score, result_proposed_by, created_at")
-            .eq("result_status", "DISPUTED")
-            .order("created_at", { ascending: false });
-
-        if (error) {
-            alert(error.message);
-            return;
-        }
-
-        setDisputedMatches(data as DisputedMatch[]);
-    }
-
-    async function loadPresenceOverview() {
-        const { data, error } = await supabase
-            .from("admin_event_presence_overview")
-            .select("*")
-            .eq("match_type", "COMPETITIVE")
-            .in("status", ["OPEN", "FULL", "CLOSED"])
-            .order("pending_checkins", { ascending: false })
-            .order("starts_at", { ascending: true })
-            .limit(20);
-
-        if (error) {
-            alert(error.message);
-            return;
-        }
-
-        setPresenceOverview((data || []) as PresenceOverview[]);
-    }
+    }, [router, loadDisputedMatches, loadPresenceOverview]);
 
     async function resolveDispute(matchId: string, winner: "A" | "B") {
         if (!confirm(`¿Confirmar victoria del Equipo ${winner}?`)) return;
@@ -169,6 +165,10 @@ export default function AdminPage() {
             await searchUsers();
         }
     }
+
+    useEffect(() => {
+        void supabase.auth.getSession().then(() => checkAdmin());
+    }, [checkAdmin]);
 
     if (loading) {
         return (

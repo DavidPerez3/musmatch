@@ -107,7 +107,7 @@ export default function CreateEventPage() {
         .eq("user_id", user.id);
 
       const friendsWithDetails = await Promise.all(
-        (friendsData || []).map(async (f: any) => {
+        (friendsData || []).map(async (f: { id: string; friend_id: string }) => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("username, elo_rating")

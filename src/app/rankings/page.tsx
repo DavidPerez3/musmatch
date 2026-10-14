@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
 
 type RankingUser = {
     id: string;
@@ -17,11 +16,7 @@ export default function RankingsPage() {
     const [rankings, setRankings] = useState<RankingUser[]>([]);
     const [myUserId, setMyUserId] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadRankings();
-    }, []);
-
-    async function loadRankings() {
+    const loadRankings = useCallback(async () => {
         setLoading(true);
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -40,7 +35,11 @@ export default function RankingsPage() {
         }
 
         setLoading(false);
-    }
+    }, []);
+
+    useEffect(() => {
+        void supabase.auth.getSession().then(() => loadRankings());
+    }, [loadRankings]);
 
     if (loading) {
         return (

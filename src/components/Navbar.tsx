@@ -4,7 +4,7 @@ import { assetPath } from "@/lib/paths";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Navbar() {
@@ -12,43 +12,9 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingActions, setPendingActions] = useState(0);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      const session = data.session;
-      setSignedIn(!!session);
-      if (session) {
-        await checkAdmin(session.user.id);
-        await loadPendingActions(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setPendingActions(0);
-      }
-    });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSignedIn(!!session);
-      if (session) {
-        checkAdmin(session.user.id);
-        loadPendingActions(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setPendingActions(0);
-      }
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
 
-  useEffect(() => {
-    if (!signedIn) return;
-    const timer = setInterval(async () => {
-      const { data } = await supabase.auth.getUser();
-      const uid = data.user?.id;
-      if (uid) await loadPendingActions(uid);
-    }, 30000);
-    return () => clearInterval(timer);
-  }, [signedIn]);
-
-  async function checkAdmin(userId: string) {
+  const checkAdmin = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
       .select("is_admin")
@@ -56,9 +22,9 @@ export default function Navbar() {
       .single();
 
     setIsAdmin(data?.is_admin || false);
-  }
+  }, []);
 
-  async function loadPendingActions(userId: string) {
+  const loadPendingActions = useCallback(async (userId: string) => {
     const { data: parts, error: pErr } = await supabase
       .from("event_participants")
       .select("event_id,team")
@@ -106,11 +72,46 @@ export default function Navbar() {
     }
 
     setPendingActions(count);
-  }
+  }, []);
 
   async function logout() {
     await supabase.auth.signOut();
   }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      const session = data.session;
+      setSignedIn(!!session);
+      if (session) {
+        await checkAdmin(session.user.id);
+        await loadPendingActions(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setPendingActions(0);
+      }
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setSignedIn(!!session);
+      if (session) {
+        checkAdmin(session.user.id);
+        loadPendingActions(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setPendingActions(0);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [checkAdmin, loadPendingActions]);
+  useEffect(() => {
+    if (!signedIn) return;
+    const timer = setInterval(async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (uid) await loadPendingActions(uid);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [signedIn, loadPendingActions]);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#052a1e] shadow-lg shadow-black/30 border-b border-black/40">

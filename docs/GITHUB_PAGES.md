@@ -31,7 +31,7 @@ GitHub Pages no ejecuta jobs. Configurar por separado un cron de Supabase que in
 
 ## Validación pendiente en el backend activo
 
-Antes de abrir las pruebas a otras personas: comprobar migraciones aplicadas y permisos de columnas de profiles (is_admin, ELO, fiabilidad), events y funciones privilegiadas. El SQL versionado contiene políticas amplias; desplegar la web no corrige esos permisos.
+La migración de Fase 0 protege columnas sensibles, escrituras y funciones internas. Ver PHASE_0.md. Las migraciones históricas contienen permisos amplios: aplicar siempre la nueva migración después de ellas.
 Probar login email/Google, recuperación, cuatro participantes, presencia, reportes coincidentes, disputa y timeout.
 
 ## Desarrollo local

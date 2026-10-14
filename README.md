@@ -12,8 +12,8 @@ Aplicacion web para organizar partidas de mus 2vs2, con modos amistoso y competi
 - Flujo de partidas completo (crear, unirse, equipos, cola NEED_PARTNER).
 - Presencia competitiva por codigos cruzados entre rivales.
 - Resultado por equipos con confirmacion automatica o disputa.
-- Timeout de respuesta rival con auto-resolucion.
-- Penalizacion de fiabilidad por no respuesta/no-show.
+- Timeout de respuesta rival con revisión sin victoria automática.
+- Fiabilidad separada del resultado: sin penalización automática por silencio.
 - Anti-boost ELO por repeticion sospechosa.
 - Match confidence score y auditoria estructurada.
 - API interna `/api/v1/internal/*` para pruebas backend por `curl`.
@@ -21,6 +21,10 @@ Aplicacion web para organizar partidas de mus 2vs2, con modos amistoso y competi
 ## Despliegue PWA en GitHub Pages
 
 Ver [configuración y pruebas](docs/GITHUB_PAGES.md). La API interna se conserva en `internal-api/`, fuera de la web estática. Las pantallas utilizan Supabase directamente.
+
+## Calidad y seguridad
+
+Ver [Fase 0](docs/PHASE_0.md). Cada push y PR ejecuta lint, TypeScript, pruebas PostgreSQL y build. El timeout unilateral requiere revisión y no modifica ELO ni fiabilidad.
 
 ## Arranque local
 

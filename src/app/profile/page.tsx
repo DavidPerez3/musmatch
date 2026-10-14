@@ -136,7 +136,7 @@ export default function ProfilePage() {
 
     // Get usernames and ELO for friends
     const friendsWithDetails = await Promise.all(
-      (friendsData || []).map(async (f: any) => {
+      (friendsData || []).map(async (f: { id: string; friend_id: string }) => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("username, elo_rating")
@@ -167,7 +167,7 @@ export default function ProfilePage() {
 
     // Get usernames for pending requests
     const pendingWithUsernames = await Promise.all(
-      (pending || []).map(async (r: any) => {
+      (pending || []).map(async (r: { id: string; from_user_id: string; to_user_id: string; created_at: string; status: string }) => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("username")
@@ -201,7 +201,7 @@ export default function ProfilePage() {
 
     // Get usernames for sent requests
     const sentWithUsernames = await Promise.all(
-      (sent || []).map(async (r: any) => {
+      (sent || []).map(async (r: { id: string; from_user_id: string; to_user_id: string; created_at: string; status: string }) => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("username")
