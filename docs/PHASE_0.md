@@ -38,7 +38,7 @@ Fixtures: seis usuarios sintéticos y partidas dentro de transacciones que se re
 
 ## Backend cloud y operación
 
-La migración de esta fase debe quedar aplicada en MusMatch. No usar las claves de Gazalbide o Resaka. El SQL no elimina usuarios ni partidas reales.
+La migración `20261014191837_phase0_security_ci.sql` está aplicada en MusMatch. Se verificó el bloqueo real de columnas y RPCs con el rol authenticated; el analizador no devuelve errores de seguridad. Quedan avisos sobre APIs autenticadas intencionales, citext y protección de contraseñas filtradas. No usar las claves de Gazalbide o Resaka. El SQL no elimina usuarios ni partidas reales.
 
 El job de timeout queda restringido a servicio/administración de base de datos. Todavía hace falta programar su invocación periódica (por ejemplo con Supabase Cron); Pages no ejecuta jobs. Durante el piloto, los pendientes vencidos no se auto-confirman.
 
