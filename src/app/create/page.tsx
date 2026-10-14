@@ -1,5 +1,7 @@
 "use client";
 
+import { eventPath } from "@/lib/paths";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -155,7 +157,7 @@ export default function CreateEventPage() {
     }
 
     setSubmitting(false);
-    router.push(`/events/${eventId}`);
+    router.push(eventPath(eventId));
   }
 
   if (loading) {
@@ -223,7 +225,7 @@ export default function CreateEventPage() {
               <button
                 type="button"
                 onClick={() => setMatchType("FRIENDLY")}
-                className={`rounded - xl px - 4 py - 3 text - left ring - 1 transition ${matchType === "FRIENDLY"
+                className={`rounded-xl px-4 py-3 text-left ring-1 transition ${matchType === "FRIENDLY"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
                   : "bg-white/5 ring-white/10 hover:bg-white/10"
                   } `}
@@ -237,7 +239,7 @@ export default function CreateEventPage() {
               <button
                 type="button"
                 onClick={() => setMatchType("COMPETITIVE")}
-                className={`rounded - xl px - 4 py - 3 text - left ring - 1 transition ${matchType === "COMPETITIVE"
+                className={`rounded-xl px-4 py-3 text-left ring-1 transition ${matchType === "COMPETITIVE"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
                   : "bg-white/5 ring-white/10 hover:bg-white/10"
                   } `}
@@ -257,7 +259,7 @@ export default function CreateEventPage() {
               <button
                 type="button"
                 onClick={() => setPairMode("FIXED_PAIR")}
-                className={`rounded - xl px - 4 py - 3 text - left ring - 1 transition ${pairMode === "FIXED_PAIR"
+                className={`rounded-xl px-4 py-3 text-left ring-1 transition ${pairMode === "FIXED_PAIR"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
                   : "bg-white/5 ring-white/10 hover:bg-white/10"
                   } `}
@@ -271,7 +273,7 @@ export default function CreateEventPage() {
               <button
                 type="button"
                 onClick={() => setPairMode("NEED_PARTNER")}
-                className={`rounded - xl px - 4 py - 3 text - left ring - 1 transition ${pairMode === "NEED_PARTNER"
+                className={`rounded-xl px-4 py-3 text-left ring-1 transition ${pairMode === "NEED_PARTNER"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
                   : "bg-white/5 ring-white/10 hover:bg-white/10"
                   } `}

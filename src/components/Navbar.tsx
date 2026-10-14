@@ -1,5 +1,7 @@
 "use client";
 
+import { assetPath } from "@/lib/paths";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -117,7 +119,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-4">
           <div className="relative h-16 w-16 overflow-hidden rounded-xl ring-1 ring-white/15">
             <Image
-              src="/brand/musmatch-logo3.png"
+              src={assetPath("/brand/musmatch-logo3.png")}
               alt="MusMatch"
               fill
               className="object-cover"
