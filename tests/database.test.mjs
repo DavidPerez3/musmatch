@@ -170,3 +170,22 @@ test('repeated pair-vs-pair matches reduce ELO impact and eventually stop changi
     if(multiplier===0) assert.deepEqual(await scores(),prior);
   }
 });
+test('friend requests and fixed-pair creation still work through authorized RPCs',async()=>{
+  await actor(0,'select public.send_friend_request($1)',[ids[1]]);
+  const request=(await actor(1,'select id from public.friend_requests')).rows[0].id;
+  await denied(0,'select public.accept_friend_request($1)',[request]);
+  await actor(1,'select public.accept_friend_request($1)',[request]);
+  const id=(await actor(0,"select public.create_match_with_partner('Pair',null,now(),null,'FRIENDLY','FIXED_PAIR',$1) as id",[ids[1]])).rows[0].id;
+  assert.equal((await db.query('select count(*)::int as n from public.event_participants where event_id=$1',[id])).rows[0].n,2);
+  await actor(0,'select public.remove_friend($1)',[ids[1]]);
+  assert.equal((await actor(0,'select * from public.friendships')).rows.length,0);
+});
+test('only the author can withdraw a legacy proposal and it cannot erase team reports',async()=>{
+  const id=await match('FRIENDLY',false);
+  await db.query("update public.events set result_status='PENDING',status='CLOSED',result_proposed_by=$2,winner_team='A',result_score='3-1' where id=$1",[id,ids[0]]);
+  await denied(2,'select public.withdraw_legacy_result($1)',[id]);
+  await actor(0,'select public.withdraw_legacy_result($1)',[id]);
+  assert.equal((await db.query('select result_status from public.events where id=$1',[id])).rows[0].result_status,null);
+  await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);
+  await denied(0,'select public.withdraw_legacy_result($1)',[id]);
+});
