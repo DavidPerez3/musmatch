@@ -1,3 +1,4 @@
+import { assetPath } from "@/lib/paths";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import PwaRegister from "@/components/PwaRegister";
@@ -6,7 +7,9 @@ import type { Metadata, Viewport } from "next";
 export const metadata: Metadata = {
   title: "MusMatch",
   description: "Encuentra pareja y rivales para jugar al mus 2vs2.",
-  manifest: "/manifest.webmanifest",
+  manifest: assetPath("/manifest.webmanifest"),
+  appleWebApp: { capable: true, title: "MusMatch", statusBarStyle: "default" },
+  icons: { apple: assetPath("/icons/apple-touch-icon.png") },
 };
 
 export const viewport: Viewport = {

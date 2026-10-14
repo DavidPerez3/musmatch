@@ -1,5 +1,7 @@
 "use client";
 
+import { assetPath } from "@/lib/paths";
+
 import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -34,7 +36,7 @@ export default function LoginPage() {
 
     const redirectTo =
       typeof window !== "undefined"
-        ? `${window.location.origin}/`
+        ? `${window.location.origin}${assetPath("/")}`
         : undefined;
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -116,7 +118,7 @@ export default function LoginPage() {
 
     const redirectTo =
       typeof window !== "undefined"
-        ? `${window.location.origin}/reset-password`
+        ? `${window.location.origin}${assetPath("/reset-password/")}`
         : undefined;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

@@ -1,5 +1,7 @@
 "use client";
 
+import { eventPath } from "@/lib/paths";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
@@ -260,7 +262,7 @@ export default function Home() {
           return (
             <Link
               key={e.id}
-              href={`/events/${e.id}`}
+              href={eventPath(e.id)}
               className="block rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

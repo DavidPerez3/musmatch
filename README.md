@@ -18,6 +18,10 @@ Aplicacion web para organizar partidas de mus 2vs2, con modos amistoso y competi
 - Match confidence score y auditoria estructurada.
 - API interna `/api/v1/internal/*` para pruebas backend por `curl`.
 
+## Despliegue PWA en GitHub Pages
+
+Ver [configuración y pruebas](docs/GITHUB_PAGES.md). La API interna se conserva en `internal-api/`, fuera de la web estática. Las pantallas utilizan Supabase directamente.
+
 ## Arranque local
 
 ```bash
@@ -30,8 +34,6 @@ npm run dev
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-INTERNAL_API_KEY=...
 ```
 
 ## Documentacion clave

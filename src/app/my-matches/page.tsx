@@ -1,5 +1,7 @@
 "use client";
 
+import { eventPath } from "@/lib/paths";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +43,7 @@ function isRivalReportSubmitted(e: MyEvent) {
 function EventCard({ e, badge }: { e: MyEvent; badge: string }) {
   return (
     <Link
-      href={`/events/${e.id}`}
+      href={eventPath(e.id)}
       className="block rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10"
     >
       <div className="flex items-start justify-between gap-3">

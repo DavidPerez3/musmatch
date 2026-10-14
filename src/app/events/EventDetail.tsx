@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 type Team = "A" | "B";
@@ -67,7 +67,7 @@ async function requireUsername(router: ReturnType<typeof useRouter>) {
 }
 
 export default function EventDetail() {
-  const { id } = useParams<{ id: string }>();
+  const id = useSearchParams().get("id") || "";
   const router = useRouter();
 
   const [event, setEvent] = useState<Event | null>(null);
@@ -95,6 +95,7 @@ export default function EventDetail() {
   );
 
   async function load() {
+    if (!id) return;
     setLoading(true);
     setErrorMsg(null);
 
@@ -425,6 +426,7 @@ export default function EventDetail() {
   }, [id]);
 
   useEffect(() => {
+    if (!id) return;
     const channel = supabase
       .channel(`event_participants_${id}`)
       .on(
@@ -461,6 +463,7 @@ export default function EventDetail() {
   }, [id, myParticipant?.team, me]);
 
   useEffect(() => {
+    if (!id) return;
     const channel = supabase
       .channel(`event_updates_${id}`)
       .on(
@@ -482,6 +485,10 @@ export default function EventDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  if (!id) return <p className="text-white/70">Selecciona una partida desde el inicio o Mis partidas.</p>;
+
+  if (errorMsg && !event) return <p role="alert" className="text-red-300">{errorMsg}</p>;
 
   if (loading || !event) {
     return <p className="p-6 text-white/70">Cargando partidaâ€¦</p>;

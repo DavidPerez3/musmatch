@@ -380,3 +380,8 @@ Implementado:
 
 Objetivo:
 - Permitir instalacion como app web en movil/escritorio para pruebas reales fuera de localhost.
+
+
+## 2026-10-14 — GitHub Pages y PWA
+
+Exportación estática con base /musmatch, detalle de partida por query, rutas OAuth corregidas, API interna preservada fuera del App Router, iconos PWA dimensionados, service worker limitado a MusMatch y aviso offline. Workflow con validación en PR y despliegue solo desde main. Build estático y TypeScript comprobados localmente con configuración pública de prueba. Backend activo, permisos y cron requieren validación independiente.
