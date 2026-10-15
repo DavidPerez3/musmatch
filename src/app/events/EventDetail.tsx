@@ -2,16 +2,25 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import MatchRulesCard from "@/components/MatchRulesCard";
+import { MatchRules, scoreTarget } from "@/lib/matchRules";
 import { supabase } from "@/lib/supabaseClient";
 
-type PresenceTokenStatus = { token: string | null; expires_at: string | null; next_refresh_at: string | null };
+type PresenceTokenStatus = {
+  token: string | null;
+  expires_at: string | null;
+  next_refresh_at: string | null;
+};
 
 type Team = "A" | "B";
 
-type Event = {
+type Event = MatchRules & {
   id: string;
   title: string;
   description: string | null;
+  notes: string | null;
+  starts_at: string;
+  location_text: string | null;
   match_type: "FRIENDLY" | "COMPETITIVE";
   pair_mode: "FIXED_PAIR" | "NEED_PARTNER";
   created_by: string;
@@ -36,7 +45,12 @@ type Participant = {
   id: string;
   user_id: string;
   team: Team | null;
-  attendance_status?: "PENDING" | "CHECKED_IN" | "NO_SHOW" | "CANCELLED_EARLY" | "CANCELLED_LATE";
+  attendance_status?:
+    | "PENDING"
+    | "CHECKED_IN"
+    | "NO_SHOW"
+    | "CANCELLED_EARLY"
+    | "CANCELLED_LATE";
 };
 
 type ProfileMini = {
@@ -83,8 +97,12 @@ export default function EventDetail() {
   const [resultNotice, setResultNotice] = useState<string | null>(null);
   const [myPresenceCode, setMyPresenceCode] = useState<string | null>(null);
   const [rivalPresenceCode, setRivalPresenceCode] = useState("");
-  const [myPresenceExpiresAt, setMyPresenceExpiresAt] = useState<string | null>(null);
-  const [myPresenceNextRefreshAt, setMyPresenceNextRefreshAt] = useState<string | null>(null);
+  const [myPresenceExpiresAt, setMyPresenceExpiresAt] = useState<string | null>(
+    null,
+  );
+  const [myPresenceNextRefreshAt, setMyPresenceNextRefreshAt] = useState<
+    string | null
+  >(null);
   const [clockNow, setClockNow] = useState<number>(Date.now());
 
   const teamA = participants.filter((p) => p.team === "A");
@@ -93,7 +111,7 @@ export default function EventDetail() {
 
   const myParticipant = useMemo(
     () => participants.find((p) => p.user_id === me) ?? null,
-    [participants, me]
+    [participants, me],
   );
 
   async function load() {
@@ -220,7 +238,9 @@ export default function EventDetail() {
     setBusy(true);
 
     // 1) entrar en cola (team=null)
-    const { error: qErr } = await supabase.rpc("join_queue", { p_event_id: id });
+    const { error: qErr } = await supabase.rpc("join_queue", {
+      p_event_id: id,
+    });
     if (qErr) {
       setBusy(false);
       alert(qErr.message);
@@ -228,7 +248,9 @@ export default function EventDetail() {
     }
 
     // 2) intentar asignar (1 persona por llamada)
-    const { error: aErr } = await supabase.rpc("assign_team", { p_event_id: id });
+    const { error: aErr } = await supabase.rpc("assign_team", {
+      p_event_id: id,
+    });
     setBusy(false);
 
     if (aErr) {
@@ -259,16 +281,19 @@ export default function EventDetail() {
       if (data === "PENDING_OTHER_TEAM") {
         setResultNotice("Resultado enviado. Falta el reporte del otro equipo.");
       } else if (data === "CONFIRMED_AUTO") {
-        setResultNotice("Resultado auto-confirmado: ambos equipos reportaron lo mismo.");
+        setResultNotice(
+          "Resultado auto-confirmado: ambos equipos reportaron lo mismo.",
+        );
       } else if (data === "DISPUTED_AUTO") {
-        setResultNotice("Reportes incompatibles: disputa abierta automaticamente.");
+        setResultNotice(
+          "Reportes incompatibles: disputa abierta automaticamente.",
+        );
       } else {
         setResultNotice("Resultado enviado.");
       }
       await load();
     }
   }
-
 
   async function confirmResult() {
     if (!me) return;
@@ -310,7 +335,9 @@ export default function EventDetail() {
     if (!me) return;
     setBusy(true);
 
-    const { error } = await supabase.rpc("withdraw_legacy_result", { p_event_id: id });
+    const { error } = await supabase.rpc("withdraw_legacy_result", {
+      p_event_id: id,
+    });
 
     setBusy(false);
 
@@ -383,7 +410,8 @@ export default function EventDetail() {
       TOKEN_OWN_USER: "No puedes validar tu propio codigo.",
       TOKEN_EXPIRED: "El codigo ha expirado.",
       TOKEN_ALREADY_USED: "Ese codigo ya fue usado.",
-      TOKEN_OWNER_NOT_ACTIVE: "El duenyo del codigo no esta activo en la partida.",
+      TOKEN_OWNER_NOT_ACTIVE:
+        "El duenyo del codigo no esta activo en la partida.",
       TOKEN_SAME_TEAM: "El codigo debe ser de un jugador del equipo rival.",
     };
     alert(map[status] ?? `No se pudo validar codigo (${status}).`);
@@ -412,7 +440,7 @@ export default function EventDetail() {
         },
         async () => {
           await load();
-        }
+        },
       )
       .subscribe();
 
@@ -449,7 +477,7 @@ export default function EventDetail() {
         },
         async () => {
           await load();
-        }
+        },
       )
       .subscribe();
 
@@ -459,9 +487,19 @@ export default function EventDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (!id) return <p className="text-white/70">Selecciona una partida desde el inicio o Mis partidas.</p>;
+  if (!id)
+    return (
+      <p className="text-white/70">
+        Selecciona una partida desde el inicio o Mis partidas.
+      </p>
+    );
 
-  if (errorMsg && !event) return <p role="alert" className="text-red-300">{errorMsg}</p>;
+  if (errorMsg && !event)
+    return (
+      <p role="alert" className="text-red-300">
+        {errorMsg}
+      </p>
+    );
 
   if (loading || !event) {
     return <p className="p-6 text-white/70">Cargando partida…</p>;
@@ -478,11 +516,14 @@ export default function EventDetail() {
 
   // Result UI helpers
   const isDisputed = event.result_status === "DISPUTED";
-  const isFinished = event.status === "FINISHED" || event.result_status === "CONFIRMED";
+  const isFinished =
+    event.status === "FINISHED" || event.result_status === "CONFIRMED";
   const isCompetitive = event.match_type === "COMPETITIVE";
 
   const myTeam = myParticipant?.team ?? null;
-  const checkedInCount = participants.filter((p) => p.team && p.attendance_status === "CHECKED_IN").length;
+  const checkedInCount = participants.filter(
+    (p) => p.team && p.attendance_status === "CHECKED_IN",
+  ).length;
   const canReportByPresence = !isCompetitive || checkedInCount >= 4;
   const legacyPendingFlow =
     event.result_status === "PENDING" &&
@@ -509,48 +550,65 @@ export default function EventDetail() {
     !isDisputed &&
     !legacyPendingFlow &&
     !!myTeam &&
-    (aFull && bFull) &&
+    aFull &&
+    bFull &&
     !myTeamSubmitted &&
     canReportByPresence;
 
   const showConfirmUI =
-    legacyPendingFlow &&
-    event.result_proposed_by !== me &&
-    !!myParticipant;
+    legacyPendingFlow && event.result_proposed_by !== me && !!myParticipant;
 
   const isMyPendingProposal =
-    legacyPendingFlow &&
-    event.result_proposed_by === me &&
-    !!myParticipant;
+    legacyPendingFlow && event.result_proposed_by === me && !!myParticipant;
 
   const isPendingWithoutParticipation =
     event.result_status === "PENDING" && !myParticipant;
   const pendingDeadlineText = event.result_pending_deadline
     ? new Date(event.result_pending_deadline).toLocaleString()
     : null;
-  const expiresMs = myPresenceExpiresAt ? new Date(myPresenceExpiresAt).getTime() - clockNow : 0;
-  const cooldownMs = myPresenceNextRefreshAt ? new Date(myPresenceNextRefreshAt).getTime() - clockNow : 0;
+  const expiresMs = myPresenceExpiresAt
+    ? new Date(myPresenceExpiresAt).getTime() - clockNow
+    : 0;
+  const cooldownMs = myPresenceNextRefreshAt
+    ? new Date(myPresenceNextRefreshAt).getTime() - clockNow
+    : 0;
   const expiresSec = Math.max(0, Math.floor(expiresMs / 1000));
   const cooldownSec = Math.max(0, Math.floor(cooldownMs / 1000));
   const canRefreshPresenceCode = cooldownSec <= 0;
 
   return (
     <main className="mm-page max-w-3xl">
-      <nav className="mm-section-nav" aria-label="Secciones de la partida"><a href="#jugadores">Jugadores</a><a href="#presencia">Presencia</a><a href="#resultado">Resultado</a></nav>
+      <nav className="mm-section-nav" aria-label="Secciones de la partida">
+        <a href="#jugadores">Jugadores</a>
+        <a href="#presencia">Presencia</a>
+        <a href="#resultado">Resultado</a>
+      </nav>
       <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">{event.title}</h1>
+        <p className="mt-2 text-sm text-white/70">
+          {new Date(event.starts_at).toLocaleString()} ·{" "}
+          {event.location_text || "Sin ubicación"}
+        </p>
+        {event.notes && (
+          <p className="mt-3 whitespace-pre-wrap text-sm text-white/70">
+            {event.notes}
+          </p>
+        )}
 
         <div className="mt-2 flex flex-wrap gap-2">
           <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
             {event.match_type === "FRIENDLY" ? "🟢 Amistosa" : "🔴 Competitiva"}
           </span>
           <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
-            {event.pair_mode === "FIXED_PAIR" ? "Voy con pareja" : "Necesito pareja"}
+            {event.pair_mode === "FIXED_PAIR"
+              ? "Voy con pareja"
+              : "Necesito pareja"}
           </span>
         </div>
 
         {errorMsg && <p className="mt-3 text-sm text-red-400">{errorMsg}</p>}
 
+        <MatchRulesCard rules={event} />
         <div id="jugadores" className="mt-6 grid gap-4 sm:grid-cols-2">
           <TeamBox
             name="Equipo A"
@@ -559,7 +617,11 @@ export default function EventDetail() {
             footer={
               isFixedPair ? (
                 isInA ? (
-                  <button disabled={busy} onClick={leave} className="btn-secondary">
+                  <button
+                    disabled={busy}
+                    onClick={leave}
+                    className="btn-secondary"
+                  >
                     Salir
                   </button>
                 ) : (
@@ -571,17 +633,19 @@ export default function EventDetail() {
                     {aFull ? "Equipo completo" : "Unirme a A"}
                   </button>
                 )
+              ) : // NEED_PARTNER
+              isInA ? (
+                <button
+                  disabled={busy}
+                  onClick={leave}
+                  className="btn-secondary"
+                >
+                  Salir
+                </button>
               ) : (
-                // NEED_PARTNER
-                isInA ? (
-                  <button disabled={busy} onClick={leave} className="btn-secondary">
-                    Salir
-                  </button>
-                ) : (
-                  <div className="text-sm text-white/60">
-                    Asignación automática
-                  </div>
-                )
+                <div className="text-sm text-white/60">
+                  Asignación automática
+                </div>
               )
             }
           />
@@ -593,7 +657,11 @@ export default function EventDetail() {
             footer={
               isFixedPair ? (
                 isInB ? (
-                  <button disabled={busy} onClick={leave} className="btn-secondary">
+                  <button
+                    disabled={busy}
+                    onClick={leave}
+                    className="btn-secondary"
+                  >
                     Salir
                   </button>
                 ) : (
@@ -605,30 +673,42 @@ export default function EventDetail() {
                     {bFull ? "Equipo completo" : "Unirme a B"}
                   </button>
                 )
+              ) : // NEED_PARTNER
+              isInB ? (
+                <button
+                  disabled={busy}
+                  onClick={leave}
+                  className="btn-secondary"
+                >
+                  Salir
+                </button>
               ) : (
-                // NEED_PARTNER
-                isInB ? (
-                  <button disabled={busy} onClick={leave} className="btn-secondary">
-                    Salir
-                  </button>
-                ) : (
-                  <div className="text-sm text-white/60">
-                    Asignación automática
-                  </div>
-                )
+                <div className="text-sm text-white/60">
+                  Asignación automática
+                </div>
               )
             }
           />
         </div>
 
         {isCompetitive && !isFinished && !isDisputed && (
-          <div id="presencia" className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-            <p className="font-semibold text-mm-card">Verificacion de presencia (competitiva)</p>
+          <div
+            id="presencia"
+            className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+          >
+            <p className="font-semibold text-mm-card">
+              Verificacion de presencia (competitiva)
+            </p>
             <p className="mt-1 text-sm text-white/70">
-              Para reportar resultado en competitiva deben estar validados los 4 jugadores.
+              Para reportar resultado en competitiva deben estar validados los 4
+              jugadores.
             </p>
             <p className="mt-2 text-sm text-white/70">
-              Progreso: <span className="font-semibold text-mm-card">{checkedInCount}/4</span> jugadores validados.
+              Progreso:{" "}
+              <span className="font-semibold text-mm-card">
+                {checkedInCount}/4
+              </span>{" "}
+              jugadores validados.
             </p>
 
             <div className="mt-3 space-y-1">
@@ -636,9 +716,18 @@ export default function EventDetail() {
                 .filter((p) => p.team)
                 .map((p) => (
                   <p key={p.id} className="text-sm text-white/80">
-                    @{profiles[p.user_id]?.username ?? "Jugador"} (Equipo {p.team}) -{" "}
-                    <span className={p.attendance_status === "CHECKED_IN" ? "text-green-400" : "text-yellow-300"}>
-                      {p.attendance_status === "CHECKED_IN" ? "Validado" : "Pendiente"}
+                    @{profiles[p.user_id]?.username ?? "Jugador"} (Equipo{" "}
+                    {p.team}) -{" "}
+                    <span
+                      className={
+                        p.attendance_status === "CHECKED_IN"
+                          ? "text-green-400"
+                          : "text-yellow-300"
+                      }
+                    >
+                      {p.attendance_status === "CHECKED_IN"
+                        ? "Validado"
+                        : "Pendiente"}
                     </span>
                   </p>
                 ))}
@@ -647,16 +736,23 @@ export default function EventDetail() {
             {!!myParticipant?.team && (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-                  <p className="text-sm text-white/70">Mi codigo de presencia</p>
+                  <p className="text-sm text-white/70">
+                    Mi codigo de presencia
+                  </p>
                   {myPresenceCode ? (
                     <>
-                      <p className="mt-1 text-lg font-bold tracking-widest text-mm-card">{myPresenceCode}</p>
+                      <p className="mt-1 text-lg font-bold tracking-widest text-mm-card">
+                        {myPresenceCode}
+                      </p>
                       <p className="mt-1 text-xs text-white/60">
-                        Expira en: {Math.floor(expiresSec / 60)}m {expiresSec % 60}s
+                        Expira en: {Math.floor(expiresSec / 60)}m{" "}
+                        {expiresSec % 60}s
                       </p>
                     </>
                   ) : (
-                    <p className="mt-1 text-sm text-white/60">Genera un codigo y compartelo con un rival.</p>
+                    <p className="mt-1 text-sm text-white/60">
+                      Genera un codigo y compartelo con un rival.
+                    </p>
                   )}
                   <button
                     disabled={busy || !canRefreshPresenceCode}
@@ -678,7 +774,9 @@ export default function EventDetail() {
                     autoCapitalize="characters"
                     autoComplete="off"
                     value={rivalPresenceCode}
-                    onChange={(e) => setRivalPresenceCode(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setRivalPresenceCode(e.target.value.toUpperCase())
+                    }
                     placeholder="Ej: AB3K9Q"
                     className="mt-2 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                   />
@@ -699,18 +797,28 @@ export default function EventDetail() {
           <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
             <div className="flex mm-stack items-center justify-between gap-3">
               <div>
-                <p className="font-semibold text-mm-card">Cola de emparejamiento</p>
+                <p className="font-semibold text-mm-card">
+                  Cola de emparejamiento
+                </p>
                 <p className="text-sm text-white/70">
                   Entra en cola y el sistema te asigna equipo cuando haya hueco.
                 </p>
               </div>
 
               {myParticipant ? (
-                <button disabled={busy} onClick={leave} className="btn-secondary">
+                <button
+                  disabled={busy}
+                  onClick={leave}
+                  className="btn-secondary"
+                >
                   Salir
                 </button>
               ) : (
-                <button disabled={busy || (aFull && bFull)} onClick={enterQueueAndAssign} className="btn-primary">
+                <button
+                  disabled={busy || (aFull && bFull)}
+                  onClick={enterQueueAndAssign}
+                  className="btn-primary"
+                >
                   Entrar en cola
                 </button>
               )}
@@ -718,21 +826,26 @@ export default function EventDetail() {
 
             <div className="mt-3">
               <p className="text-sm text-white/70">
-                En cola: <span className="text-mm-card font-semibold">{queue.length}</span>
+                En cola:{" "}
+                <span className="text-mm-card font-semibold">
+                  {queue.length}
+                </span>
               </p>
               {queue.length > 0 && (
                 <ul className="mt-2 space-y-1">
                   {queue.map((p) => (
                     <li key={p.id} className="text-white">
                       @{profiles[p.user_id]?.username ?? "Jugador"}
-                      {p.user_id === me ? <span className="text-white/50"> (tú)</span> : null}
+                      {p.user_id === me ? (
+                        <span className="text-white/50"> (tú)</span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
               )}
             </div>
 
-            {!myParticipant && (aFull && bFull) && (
+            {!myParticipant && aFull && bFull && (
               <p className="mt-3 text-sm text-white/70">
                 La partida está completa.
               </p>
@@ -747,9 +860,22 @@ export default function EventDetail() {
         )}
       </div>
 
-      {!isCompetitive && <p id="presencia" className="mt-6 rounded-xl bg-white/5 p-4 text-sm text-white/70">En amistosa la verificación de presencia no es obligatoria.</p>}
-      {isCompetitive && (isFinished || isDisputed) && <p id="presencia" className="mt-6 text-sm text-white/70">Jugadores con presencia validada: {checkedInCount}/4.</p>}
-      <div id="resultado" className="mt-8 border-t border-white/10 pt-6"><h2 className="text-xl font-semibold">Resultado de la partida</h2></div>
+      {!isCompetitive && (
+        <p
+          id="presencia"
+          className="mt-6 rounded-xl bg-white/5 p-4 text-sm text-white/70"
+        >
+          En amistosa la verificación de presencia no es obligatoria.
+        </p>
+      )}
+      {isCompetitive && (isFinished || isDisputed) && (
+        <p id="presencia" className="mt-6 text-sm text-white/70">
+          Jugadores con presencia validada: {checkedInCount}/4.
+        </p>
+      )}
+      <div id="resultado" className="mt-8 border-t border-white/10 pt-6">
+        <h2 className="text-xl font-semibold">Resultado de la partida</h2>
+      </div>
       {/* RESULT SECTION */}
       {resultNotice && (
         <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
@@ -761,7 +887,8 @@ export default function EventDetail() {
         <div className="mt-6 rounded-2xl bg-red-500/10 p-4 ring-1 ring-red-500/30">
           <p className="font-bold text-red-400">Partido en Disputa</p>
           <p className="mt-1 text-sm text-white/70">
-            Un administrador revisara el caso. Si teneis pruebas, contactad con soporte.
+            Un administrador revisara el caso. Si teneis pruebas, contactad con
+            soporte.
           </p>
           <a
             href={`mailto:soporte@musmatch.com?subject=Disputa%20Partida%20${id}&body=Hola,%0A%0AQuiero%20reportar%20una%20disputa%20en%20la%20partida%20${id}.`}
@@ -776,39 +903,64 @@ export default function EventDetail() {
         <div className="mt-6 rounded-2xl bg-green-500/10 p-4 ring-1 ring-green-500/30 text-center">
           <p className="text-xl font-bold text-green-400">Partido Finalizado</p>
           <p className="text-lg text-white">
-            Ganador: <span className="font-bold">{event.winner_team === "A" ? "Equipo A" : "Equipo B"}</span>
+            Ganador:{" "}
+            <span className="font-bold">
+              {event.winner_team === "A" ? "Equipo A" : "Equipo B"}
+            </span>
           </p>
-          <p className="text-sm text-white/70">Resultado: {event.result_score}</p>
+          <p className="text-sm text-white/70">
+            Resultado: {event.result_score}
+          </p>
         </div>
       )}
 
-      {!isFinished && !isDisputed && !!myTeam && event.result_status === "PENDING" && myTeamSubmitted && !rivalTeamSubmitted && (
-        <div className="mt-6 rounded-2xl bg-blue-500/10 p-6 ring-1 ring-blue-500/30">
-          <p className="font-bold text-blue-300 text-lg">Reporte enviado</p>
-          <p className="mt-1 text-sm text-white/70">Tu equipo ya envio el resultado. Falta el equipo rival.</p>
-          {pendingDeadlineText && (
+      {!isFinished &&
+        !isDisputed &&
+        !!myTeam &&
+        event.result_status === "PENDING" &&
+        myTeamSubmitted &&
+        !rivalTeamSubmitted && (
+          <div className="mt-6 rounded-2xl bg-blue-500/10 p-6 ring-1 ring-blue-500/30">
+            <p className="font-bold text-blue-300 text-lg">Reporte enviado</p>
             <p className="mt-1 text-sm text-white/70">
-              Si no responden antes de {pendingDeadlineText}, pasara a revision sin modificar el ELO.
+              Tu equipo ya envio el resultado. Falta el equipo rival.
             </p>
-          )}
-        </div>
-      )}
+            {pendingDeadlineText && (
+              <p className="mt-1 text-sm text-white/70">
+                Si no responden antes de {pendingDeadlineText}, pasara a
+                revision sin modificar el ELO.
+              </p>
+            )}
+          </div>
+        )}
 
-      {!isFinished && !isDisputed && !!myTeam && event.result_status === "PENDING" && !myTeamSubmitted && rivalTeamSubmitted && (
-        <div className="mt-6 rounded-2xl bg-mm-gold/10 p-6 ring-1 ring-mm-gold/40">
-          <p className="font-bold text-mm-gold text-lg">Falta tu reporte de equipo</p>
-          <p className="mt-1 text-sm text-white/70">El rival ya envio su version. Envia la de tu equipo para resolver automaticamente.</p>
-          {pendingDeadlineText && (
-            <p className="mt-1 text-sm text-white/70">
-              Limite de respuesta: {pendingDeadlineText}.
+      {!isFinished &&
+        !isDisputed &&
+        !!myTeam &&
+        event.result_status === "PENDING" &&
+        !myTeamSubmitted &&
+        rivalTeamSubmitted && (
+          <div className="mt-6 rounded-2xl bg-mm-gold/10 p-6 ring-1 ring-mm-gold/40">
+            <p className="font-bold text-mm-gold text-lg">
+              Falta tu reporte de equipo
             </p>
-          )}
-        </div>
-      )}
+            <p className="mt-1 text-sm text-white/70">
+              El rival ya envio su version. Envia la de tu equipo para resolver
+              automaticamente.
+            </p>
+            {pendingDeadlineText && (
+              <p className="mt-1 text-sm text-white/70">
+                Limite de respuesta: {pendingDeadlineText}.
+              </p>
+            )}
+          </div>
+        )}
 
       {showConfirmUI && (
         <div className="mt-6 rounded-2xl bg-mm-gold/10 p-6 ring-1 ring-mm-gold/40">
-          <p className="font-bold text-mm-gold text-lg">Confirmar Resultado (modo legacy)</p>
+          <p className="font-bold text-mm-gold text-lg">
+            Confirmar Resultado (modo legacy)
+          </p>
           <p className="text-white/80">
             El rival ha propuesto:
             <span className="font-bold ml-1">
@@ -837,7 +989,9 @@ export default function EventDetail() {
       {isMyPendingProposal && (
         <div className="mt-6 rounded-2xl bg-blue-500/10 p-6 ring-1 ring-blue-500/30">
           <p className="font-bold text-blue-300 text-lg">Resultado enviado</p>
-          <p className="mt-1 text-sm text-white/70">Tu propuesta legacy esta pendiente del rival.</p>
+          <p className="mt-1 text-sm text-white/70">
+            Tu propuesta legacy esta pendiente del rival.
+          </p>
           <div className="mt-4">
             <button
               disabled={busy}
@@ -862,87 +1016,175 @@ export default function EventDetail() {
         </div>
       )}
 
-      {!isFinished && !isDisputed && isCompetitive && !!myTeam && !canReportByPresence && (
-        <div className="mt-6 rounded-2xl bg-yellow-500/10 p-4 ring-1 ring-yellow-500/30">
-          <p className="font-semibold text-yellow-300">Falta validar presencia</p>
-          <p className="mt-1 text-sm text-white/70">
-            En competitiva no se puede reportar resultado hasta tener 4/4 jugadores validados.
-          </p>
-        </div>
-      )}
+      {!isFinished &&
+        !isDisputed &&
+        isCompetitive &&
+        !!myTeam &&
+        !canReportByPresence && (
+          <div className="mt-6 rounded-2xl bg-yellow-500/10 p-4 ring-1 ring-yellow-500/30">
+            <p className="font-semibold text-yellow-300">
+              Falta validar presencia
+            </p>
+            <p className="mt-1 text-sm text-white/70">
+              En competitiva no se puede reportar resultado hasta tener 4/4
+              jugadores validados.
+            </p>
+          </div>
+        )}
 
       {showTeamReportUI && (
-        <ReportForm busy={busy} onReport={reportResult} />
+        <ReportForm rules={event} busy={busy} onReport={reportResult} />
       )}
-
     </main>
   );
 }
 
 function ReportForm({
+  rules,
   busy,
   onReport,
 }: {
   busy: boolean;
   onReport: (w: Team, s: string) => void;
+  rules: MatchRules;
 }) {
   const [winner, setWinner] = useState<Team>("A");
   const [score, setScore] = useState("");
+  const [scoreA, setScoreA] = useState("");
+  const [scoreB, setScoreB] = useState("");
+  const target = scoreTarget(rules);
+  const a = Number(scoreA),
+    b = Number(scoreB);
+  const structuredValid =
+    target !== null &&
+    scoreA !== "" &&
+    scoreB !== "" &&
+    Number.isInteger(a) &&
+    Number.isInteger(b) &&
+    a >= 0 &&
+    b >= 0 &&
+    ((a === target && b < target) || (b === target && a < target));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!score) return;
-    onReport(winner, score);
+    if (target !== null) {
+      if (!structuredValid) return;
+      onReport(a > b ? "A" : "B", `${a}-${b}`);
+    } else {
+      if (!score) return;
+      onReport(winner, score);
+    }
   };
 
   return (
     <div className="mt-6 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
       <h3 className="text-lg font-bold text-mm-card">Reportar Resultado</h3>
       <p className="text-sm text-white/60 mb-4">
-        Reporta el resultado desde tu equipo. El sistema lo cruza con el reporte rival.
+        Reporta el resultado desde tu equipo. El sistema lo cruza con el reporte
+        rival.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-white/70 mb-1">Ganador</label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="winner"
-                value="A"
-                checked={winner === "A"}
-                onChange={() => setWinner("A")}
-                className="accent-mm-gold"
-              />
-              <span className="text-white">Equipo A</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="winner"
-                value="B"
-                checked={winner === "B"}
-                onChange={() => setWinner("B")}
-                className="accent-mm-gold"
-              />
-              <span className="text-white">Equipo B</span>
-            </label>
-          </div>
-        </div>
+        {target !== null ? (
+          <>
+            <p className="text-sm text-white/70">
+              Indica {rules.vacas_to_win === 1 ? "juegos" : "vacas"} ganados por
+              cada equipo. El ganador debe llegar a {target}. El orden siempre
+              es A–B, también para el equipo B.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="score-a" className="block text-sm">
+                  Equipo A
+                </label>
+                <input
+                  id="score-a"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={target}
+                  step={1}
+                  required
+                  value={scoreA}
+                  onChange={(e) => setScoreA(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2"
+                />
+              </div>
+              <div>
+                <label htmlFor="score-b" className="block text-sm">
+                  Equipo B
+                </label>
+                <input
+                  id="score-b"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={target}
+                  step={1}
+                  required
+                  value={scoreB}
+                  onChange={(e) => setScoreB(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2"
+                />
+              </div>
+            </div>
+            <p role="status" className="text-sm text-mm-gold">
+              {structuredValid
+                ? `Gana el equipo ${a > b ? "A" : "B"}`
+                : "Introduce un marcador final válido, sin empate."}
+            </p>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm text-white/70 mb-1">
+                Ganador
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="winner"
+                    value="A"
+                    checked={winner === "A"}
+                    onChange={() => setWinner("A")}
+                    className="accent-mm-gold"
+                  />
+                  <span className="text-white">Equipo A</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="winner"
+                    value="B"
+                    checked={winner === "B"}
+                    onChange={() => setWinner("B")}
+                    className="accent-mm-gold"
+                  />
+                  <span className="text-white">Equipo B</span>
+                </label>
+              </div>
+            </div>
 
-        <div>
-          <label htmlFor="field-1" className="block text-sm text-white/70 mb-1">Resultado (ej: 3-1)</label>
-          <input id="field-1"
-            value={score}
-            onChange={(e) => setScore(e.target.value)}
-            placeholder="3-1"
-            className="w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
-          />
-        </div>
-
+            <div>
+              <label
+                htmlFor="field-1"
+                className="block text-sm text-white/70 mb-1"
+              >
+                Resultado (ej: 3-1)
+              </label>
+              <input
+                id="field-1"
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                placeholder="3-1"
+                className="w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
+              />
+            </div>
+          </>
+        )}
         <button
-          disabled={busy || !score}
+          disabled={busy || (target !== null ? !structuredValid : !score)}
           className="rounded-xl bg-mm-gold px-4 py-2 font-semibold text-mm-bg disabled:opacity-50"
         >
           Enviar Resultado
@@ -970,7 +1212,10 @@ function TeamBox({
       <ul className="mt-2 space-y-1">
         {players.map((p) => (
           <li key={p.id} className="text-white">
-            @{profiles[p.user_id]?.username ?? "Jugador"} <span className="text-white/50 text-xs">({profiles[p.user_id]?.elo_rating ?? 1000})</span>
+            @{profiles[p.user_id]?.username ?? "Jugador"}{" "}
+            <span className="text-white/50 text-xs">
+              ({profiles[p.user_id]?.elo_rating ?? 1000})
+            </span>
           </li>
         ))}
         {Array.from({ length: 2 - players.length }).map((_, i) => (

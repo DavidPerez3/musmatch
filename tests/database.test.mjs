@@ -81,7 +81,7 @@ test('four seats, two per team, no forged presence or changing another player',a
   await denied(0,"update public.event_participants set team='B' where event_id=$1 and user_id=$2",[id,ids[0]]);
 });
 test('joining and queue assignment remain available to participants only',async()=>{
-  const {rows}=await actor(0,"select public.create_match_with_partner('Test',null,now(),null,'FRIENDLY','NEED_PARTNER',null) as id");
+  const {rows}=await actor(0,"select public.create_match_with_rules('Test',null,now(),null,'FRIENDLY','NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null) as id");
   const id=rows[0].id;
   await denied(4,'select public.assign_team($1)',[id]);
   await actor(1,'select public.join_queue($1)',[id]);
@@ -175,7 +175,7 @@ test('friend requests and fixed-pair creation still work through authorized RPCs
   const request=(await actor(1,'select id from public.friend_requests')).rows[0].id;
   await denied(0,'select public.accept_friend_request($1)',[request]);
   await actor(1,'select public.accept_friend_request($1)',[request]);
-  const id=(await actor(0,"select public.create_match_with_partner('Pair',null,now(),null,'FRIENDLY','FIXED_PAIR',$1) as id",[ids[1]])).rows[0].id;
+  const id=(await actor(0,"select public.create_match_with_rules('Pair',null,now(),null,'FRIENDLY','FIXED_PAIR',$1,'EIGHT_KINGS',40,3,1,null) as id",[ids[1]])).rows[0].id;
   assert.equal((await db.query('select count(*)::int as n from public.event_participants where event_id=$1',[id])).rows[0].n,2);
   await actor(0,'select public.remove_friend($1)',[ids[1]]);
   assert.equal((await actor(0,'select * from public.friendships')).rows.length,0);
@@ -188,4 +188,60 @@ test('only the author can withdraw a legacy proposal and it cannot erase team re
   assert.equal((await db.query('select result_status from public.events where id=$1',[id])).rows[0].result_status,null);
   await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);
   await denied(0,'select public.withdraw_legacy_result($1)',[id]);
+});
+
+async function rulesMatch(variant='EIGHT_KINGS',points=40,games=3,vacas=1,mode='COMPETITIVE',house=null) {
+ return (await actor(0,"select public.create_match_with_rules('Rules',null,now(),null,$1,'NEED_PARTNER',null,$2,$3,$4,$5,$6) as id",[mode,variant,points,games,vacas,house])).rows[0].id;
+}
+async function completeRulesMatch(games=3,vacas=1,mode='COMPETITIVE') {
+ const id=await rulesMatch('EIGHT_KINGS',40,games,vacas,mode);
+ for(let i=1;i<4;i++){await actor(i,'select public.join_queue($1)',[id]);await actor(i,'select public.assign_team($1)',[id]);}
+ await db.query("update public.event_participants set attendance_status='CHECKED_IN' where event_id=$1",[id]);
+ return id;
+}
+test('every supported rules combination is stored and exposed with invoker RLS',async()=>{
+ for(const variant of ['EIGHT_KINGS','FOUR_KINGS'])for(const points of [30,40])for(const games of [1,2,3,4])for(const vacas of [1,2,3]){
+  const id=await rulesMatch(variant,points,games,vacas,'FRIENDLY','Sin juego real');
+  const row=(await actor(1,'select * from public.events_with_counts where id=$1',[id])).rows[0];
+  assert.equal(row.rules_version,1);assert.equal(row.rules_variant,variant);assert.equal(row.points_per_game,points);assert.equal(row.games_to_win,games);assert.equal(row.vacas_to_win,vacas);assert.equal(row.house_rules,'Sin juego real');assert.equal(row.players_count,1);
+ }
+ await db.exec('SAVEPOINT anon_read; SET LOCAL ROLE anon');
+ await assert.rejects(db.query('select * from public.events_with_counts'));
+ await db.exec('ROLLBACK TO SAVEPOINT anon_read; RESET ROLE');
+});
+test('invalid or missing rules roll back creation and legacy browser creation is disabled',async()=>{
+ const cases=[['TEN_KINGS',40,3,1,null],[null,40,3,1,null],['EIGHT_KINGS',null,3,1,null],['EIGHT_KINGS',35,3,1,null],['EIGHT_KINGS',40,0,1,null],['EIGHT_KINGS',40,5,1,null],['EIGHT_KINGS',40,3,0,null],['EIGHT_KINGS',40,3,4,null],['EIGHT_KINGS',40,3,1,'x'.repeat(1001)]];
+ for(const args of cases)await denied(0,"select public.create_match_with_rules('Invalid',null,now(),null,'FRIENDLY','NEED_PARTNER',null,$1,$2,$3,$4,$5)",args);
+ await denied(0,"select public.create_match_with_partner('Old',null,now(),null,'FRIENDLY','NEED_PARTNER',null)");
+ assert.equal((await db.query('select count(*)::int n from public.events')).rows[0].n,0);
+});
+test('rules contract and match type are immutable; historical rules remain unknown',async()=>{
+ const id=await rulesMatch();
+ await denied(0,"update public.events set games_to_win=4 where id=$1",[id]);
+ for(const update of ["games_to_win=4","rules_variant='FOUR_KINGS'","points_per_game=30","vacas_to_win=2","house_rules='Otra regla'","match_type='FRIENDLY'","rules_version=0"]){
+  await db.exec('SAVEPOINT immutable');await assert.rejects(db.query(`update public.events set ${update} where id=$1`,[id]),/fijados/);await db.exec('ROLLBACK TO SAVEPOINT immutable');
+ }
+ const old=await match();const row=(await db.query('select rules_version,rules_variant from public.events where id=$1',[old])).rows[0];assert.equal(row.rules_version,0);assert.equal(row.rules_variant,null);
+ assert.equal((await db.query("select has_function_privilege('authenticated','public.guard_match_rules()','EXECUTE') allowed")).rows[0].allowed,false);
+});
+for(const winner of ['A','B'])test(`structured ${winner} result validates score and applies ELO once`,async()=>{
+ const id=await completeRulesMatch(2);const score=winner==='A'?'2-1':'1-2';
+ for(const invalid of ['3-1','2-2','1-1','0-0','1.5-2','02-1','4-0','text'])await denied(0,'select public.submit_team_result($1,$2,$3)',[id,winner,invalid]);
+ await denied(0,'select public.submit_team_result($1,$2,$3)',[id,winner,winner==='A'?'1-2':'2-1']);
+ await actor(0,'select public.submit_team_result($1,$2,$3)',[id,winner,score]);
+ await actor(1,'select public.submit_team_result($1,$2,$3)',[id,winner,score]);
+ const row=(await db.query('select result_status,result_score,winner_team from public.events where id=$1',[id])).rows[0];assert.equal(row.result_status,'CONFIRMED');assert.equal(row.result_score,score);assert.equal(row.winner_team,winner);
+ const before=await scores();await denied(1,'select public.submit_team_result($1,$2,$3)',[id,winner,score]);assert.deepEqual(await scores(),before);
+});
+test('multi-vaca score counts vacas; friendly results do not move ELO',async()=>{
+ const id=await completeRulesMatch(4,2,'FRIENDLY');const before=await scores();
+ await denied(0,"select public.submit_team_result($1,'A','4-1')",[id]);
+ await actor(0,"select public.submit_team_result($1,'A','2-1')",[id]);await actor(1,"select public.submit_team_result($1,'A','2-1')",[id]);assert.deepEqual(await scores(),before);
+});
+test('structured disputed score is neutral and admin resolution preserves chosen report',async()=>{
+ const id=await completeRulesMatch();const before=await scores();
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);await actor(1,"select public.submit_team_result($1,'B','0-3')",[id]);assert.deepEqual(await scores(),before);
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);
+ await actor(5,"select public.admin_resolve_dispute($1,'A',true)",[id]);
+ const row=(await db.query('select result_status,result_score,winner_team from public.events where id=$1',[id])).rows[0];assert.deepEqual(row,{result_status:'CONFIRMED',result_score:'3-1',winner_team:'A'});
 });
