@@ -130,7 +130,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-8">
+    <main className="mm-page max-w-md">
       <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">MusMatch</h1>
         <p className="mt-1 text-sm text-white/70">
@@ -176,8 +176,8 @@ export default function LoginPage() {
         <form onSubmit={tab === "login" ? handleLogin : handleRegister} className="space-y-3">
           {tab === "register" && (
             <div>
-              <label className="text-sm text-white/70">Username</label>
-              <input
+              <label htmlFor="field-1" className="text-sm text-white/70">Username</label>
+              <input id="field-1"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -187,8 +187,8 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="text-sm text-white/70">Email</label>
-            <input
+            <label htmlFor="field-2" className="text-sm text-white/70">Email</label>
+            <input id="field-2"
               className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -199,9 +199,9 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-sm text-white/70">Contraseña</label>
+            <label htmlFor="password" className="text-sm text-white/70">Contraseña</label>
             <div className="mt-1 flex items-center gap-2 rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2">
-              <input
+              <input id="password"
                 className="w-full bg-transparent text-mm-card outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

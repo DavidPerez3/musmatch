@@ -172,7 +172,7 @@ export default function AdminPage() {
 
     if (loading) {
         return (
-            <main className="mx-auto max-w-5xl px-4 py-8 text-white/70">
+            <main className="mm-page max-w-5xl text-white/70">
                 Verificando permisos...
             </main>
         );
@@ -183,7 +183,7 @@ export default function AdminPage() {
     }
 
     return (
-        <main className="mx-auto max-w-5xl px-4 py-8">
+        <main className="mm-page max-w-5xl">
             <h1 className="text-3xl font-bold text-mm-card">Panel de Administración</h1>
 
             {/* DISPUTED MATCHES */}
@@ -199,7 +199,7 @@ export default function AdminPage() {
                                 key={match.id}
                                 className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
                             >
-                                <div className="flex items-start justify-between gap-4">
+                                <div className="flex mm-stack items-start justify-between gap-4">
                                     <div>
                                         <h3 className="font-semibold text-mm-card">{match.title}</h3>
                                         <p className="text-sm text-white/70">ID: {match.id}</p>
@@ -233,7 +233,7 @@ export default function AdminPage() {
 
             {/* PRESENCE RISK QUEUE */}
             <section className="mt-12">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex mm-stack items-center justify-between gap-3">
                     <h2 className="text-2xl font-semibold text-mm-card">Prioridad Presencia (Competitivas)</h2>
                     <button
                         onClick={loadPresenceOverview}
@@ -249,7 +249,7 @@ export default function AdminPage() {
                     <div className="mt-4 space-y-3">
                         {presenceOverview.map((row) => (
                             <div key={row.event_id} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-                                <div className="flex items-start justify-between gap-4">
+                                <div className="flex mm-stack items-start justify-between gap-4">
                                     <div>
                                         <h3 className="font-semibold text-mm-card">{row.title}</h3>
                                         <p className="text-sm text-white/70">
@@ -285,7 +285,7 @@ export default function AdminPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && searchUsers()}
-                        className="flex-1 rounded-xl border border-white/10 bg-mm-bg2 px-4 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
+                        className="min-w-0 flex-1 rounded-xl border border-white/10 bg-mm-bg2 px-4 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                     />
                     <button
                         onClick={searchUsers}
@@ -302,7 +302,7 @@ export default function AdminPage() {
                                 key={user.id}
                                 className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
                             >
-                                <div className="flex items-start justify-between gap-4">
+                                <div className="flex mm-stack items-start justify-between gap-4">
                                     <div>
                                         <h3 className="font-semibold text-mm-card">
                                             @{user.username || "Sin username"}

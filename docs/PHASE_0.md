@@ -40,7 +40,7 @@ Fixtures: seis usuarios sintéticos y partidas dentro de transacciones que se re
 
 La migración `20261014191837_phase0_security_ci.sql` está aplicada en MusMatch. Se verificó el bloqueo real de columnas y RPCs con el rol authenticated; el analizador no devuelve errores de seguridad. Quedan avisos sobre APIs autenticadas intencionales, citext y protección de contraseñas filtradas. No usar las claves de Gazalbide o Resaka. El SQL no elimina usuarios ni partidas reales.
 
-El job de timeout queda restringido a servicio/administración de base de datos. Todavía hace falta programar su invocación periódica (por ejemplo con Supabase Cron); Pages no ejecuta jobs. Durante el piloto, los pendientes vencidos no se auto-confirman.
+El job de timeout queda restringido a servicio/administración de base de datos. Supabase Cron ya lo invoca cada cinco minutos mediante la migración `20261015060445_schedule_result_reviews.sql`; se verificó una ejecución correcta en cloud. Pages no ejecuta jobs. Los pendientes vencidos pasan a revisión neutral.
 
 El repositorio ejecuta checks, pero exigirlos para impedir merges manuales requiere una regla de protección de main en Settings > Rules. Añadir el check build como obligatorio; no confundir ejecutar CI con proteger administrativamente la rama.
 

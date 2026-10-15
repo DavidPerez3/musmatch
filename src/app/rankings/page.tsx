@@ -1,118 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
-type RankingUser = {
-    id: string;
-    username: string | null;
-    full_name: string | null;
-    elo_rating: number;
-    reliability_score: number;
-};
+type RankingUser = { id: string; username: string | null; full_name: string | null; elo_rating: number; reliability_score: number };
 
 export default function RankingsPage() {
-    const [loading, setLoading] = useState(true);
-    const [rankings, setRankings] = useState<RankingUser[]>([]);
-    const [myUserId, setMyUserId] = useState<string | null>(null);
-
-    const loadRankings = useCallback(async () => {
-        setLoading(true);
-
-        const { data: { user } } = await supabase.auth.getUser();
-        setMyUserId(user?.id || null);
-
-        const { data, error } = await supabase
-            .from("profiles")
-            .select("id, username, full_name, elo_rating, reliability_score")
-            .order("elo_rating", { ascending: false })
-            .limit(50);
-
-        if (error) {
-            console.error(error);
-        } else {
-            setRankings(data as RankingUser[]);
-        }
-
-        setLoading(false);
-    }, []);
-
-    useEffect(() => {
-        void supabase.auth.getSession().then(() => loadRankings());
-    }, [loadRankings]);
-
-    if (loading) {
-        return (
-            <main className="mx-auto max-w-4xl px-4 py-8 text-white/70">
-                Cargando rankings...
-            </main>
-        );
-    }
-
-    return (
-        <main className="mx-auto max-w-4xl px-4 py-8">
-            <h1 className="text-3xl font-bold text-mm-card">🏆 Rankings</h1>
-            <p className="mt-2 text-white/70">Top 50 jugadores por ELO</p>
-
-            <div className="mt-6 overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
-                <table className="w-full">
-                    <thead className="bg-white/5">
-                        <tr className="text-left text-sm text-white/70">
-                            <th className="px-4 py-3 font-medium">Rank</th>
-                            <th className="px-4 py-3 font-medium">Jugador</th>
-                            <th className="px-4 py-3 font-medium text-right">ELO</th>
-                            <th className="px-4 py-3 font-medium text-right">Karma</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {rankings.map((user, index) => {
-                            const isMe = user.id === myUserId;
-                            const rank = index + 1;
-
-                            return (
-                                <tr
-                                    key={user.id}
-                                    className={`${isMe ? 'bg-mm-gold/10 ring-2 ring-mm-gold/30' : 'hover:bg-white/5'
-                                        } transition`}
-                                >
-                                    <td className="px-4 py-3">
-                                        <span className={`font-bold ${rank === 1 ? 'text-yellow-400' :
-                                                rank === 2 ? 'text-gray-300' :
-                                                    rank === 3 ? 'text-orange-400' :
-                                                        'text-white/70'
-                                            }`}>
-                                            {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div>
-                                            <p className="font-semibold text-mm-card">
-                                                {user.username || "Sin username"}
-                                                {isMe && <span className="ml-2 text-xs text-mm-gold">(Tú)</span>}
-                                            </p>
-                                            {user.full_name && (
-                                                <p className="text-xs text-white/60">{user.full_name}</p>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <span className="font-bold text-mm-gold">{user.elo_rating}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <span className="text-green-400">{user.reliability_score}</span>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-
-            {myUserId && !rankings.find(u => u.id === myUserId) && (
-                <p className="mt-4 text-center text-sm text-white/60">
-                    No estás en el top 50. ¡Sigue jugando para subir!
-                </p>
-            )}
-        </main>
-    );
+  const [loading, setLoading] = useState(true);
+  const [rankings, setRankings] = useState<RankingUser[]>([]);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
+      setMyUserId(user?.id || null);
+      if (!user) { setLoading(false); return; }
+      const { data, error } = await supabase.from("profiles")
+        .select("id,username,full_name,elo_rating,reliability_score")
+        .order("elo_rating", { ascending: false }).order("id", { ascending: true }).limit(50);
+      if (cancelled) return;
+      setError(!!error);
+      setRankings((data as RankingUser[]) || []);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  return <main className="mm-page max-w-3xl">
+    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-mm-gold">Cada partida cuenta</p>
+    <h1 className="font-bold">Ranking</h1>
+    <p className="mt-2 mb-6 text-sm text-white/60">Los 50 jugadores con más ELO. Las amistosas no modifican tu nivel.</p>
+    {loading ? <p role="status">Cargando ranking…</p> : !myUserId ? <div className="mm-empty"><p className="mb-4">Entra para consultar la clasificación.</p><Link href="/login" className="btn-primary mx-auto max-w-xs">Entrar</Link></div> : error ? <p role="alert" className="mm-empty">No hemos podido cargar el ranking. Comprueba tu conexión y vuelve a intentarlo.</p> : rankings.length === 0 ? <p className="mm-empty">Todavía no hay jugadores en el ranking.</p> : <ol className="mm-ranking-list" aria-label="Clasificación por ELO">
+      {rankings.map((user, index) => <li key={user.id} className={`mm-ranking-row ${user.id === myUserId ? "is-me" : ""}`}>
+        <span className="mm-ranking-number" aria-label={`Puesto ${index + 1}`}>{`#${index + 1}`}</span>
+        <div className="min-w-0">
+          <p className="font-semibold">{user.username || "Jugador"}{user.id === myUserId && <span className="ml-2 text-xs text-mm-gold">Tú</span>}</p>
+          {user.full_name && <p className="mt-1 text-xs text-white/50">{user.full_name}</p>}
+          <p className="mt-1 text-xs text-white/60">Fiabilidad {user.reliability_score}</p>
+        </div>
+        <div className="mm-ranking-rating">{user.elo_rating}<span className="mm-ranking-meta block">ELO</span></div>
+      </li>)}
+    </ol>}
+    {!loading && myUserId && !error && rankings.length > 0 && !rankings.some(user => user.id === myUserId) && <p className="mt-6 text-center text-sm text-white/60">Aún no estás en el top 50. Consulta tu ELO en tu perfil.</p>}
+  </main>;
 }

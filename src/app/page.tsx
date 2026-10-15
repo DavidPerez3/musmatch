@@ -37,10 +37,11 @@ function labelMatchType(t: MatchType) {
 }
 
 function labelPairMode(m: PairMode) {
-  return m === "FIXED_PAIR" ? "👥 Voy con pareja" : "🤝 Necesito pareja";
+  return m === "FIXED_PAIR" ? "Voy con pareja" : "Necesito pareja";
 }
 
 export default function Home() {
+  const [signedIn, setSignedIn] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -59,6 +60,9 @@ export default function Home() {
       setLoading(true);
       setErrorMsg(null);
 
+      const { data: sessionData } = await supabase.auth.getSession();
+      setSignedIn(!!sessionData.session);
+      if (!sessionData.session) { setLoading(false); return; }
       const { data, error } = await supabase
         .from("events_with_counts")
         .select("*")
@@ -114,19 +118,21 @@ export default function Home() {
   }, [events, filters]);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-6">
+    <main className="mm-page max-w-5xl">
       <header className="mb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-mm-card">Partidas</h1>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-mm-gold">A la mesa</p><h1 className="text-3xl font-bold text-mm-card">Tu próxima partida</h1><p className="mt-2 text-sm text-white/60">Encuentra pareja, reúne a cuatro y disfruta del mus.</p>
           </div>
 
           <div className="flex gap-2">
             <button
+              aria-expanded={showFilters}
+              aria-controls="filtros"
               onClick={() => setShowFilters(!showFilters)}
               className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-mm-card hover:bg-white/20"
             >
-              {showFilters ? "🔽" : "🔼"} Filtros
+              Filtros {showFilters ? "−" : "+"}
             </button>
             <Link
               href="/create"
@@ -139,12 +145,12 @@ export default function Home() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div id="filtros" className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Location */}
               <div>
-                <label className="text-sm text-white/70">Ubicación</label>
-                <input
+                <label htmlFor="field-1" className="text-sm text-white/70">Ubicación</label>
+                <input id="field-1"
                   type="text"
                   placeholder="Buscar ubicación..."
                   value={filters.location}
@@ -155,8 +161,8 @@ export default function Home() {
 
               {/* Date From */}
               <div>
-                <label className="text-sm text-white/70">Desde fecha</label>
-                <input
+                <label htmlFor="field-2" className="text-sm text-white/70">Desde fecha</label>
+                <input id="field-2"
                   type="date"
                   value={filters.dateFrom}
                   onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
@@ -166,8 +172,8 @@ export default function Home() {
 
               {/* Match Type */}
               <div>
-                <label className="text-sm text-white/70">Tipo</label>
-                <select
+                <label htmlFor="field-3" className="text-sm text-white/70">Tipo</label>
+                <select id="field-3"
                   value={filters.matchType}
                   onChange={(e) => setFilters({ ...filters, matchType: e.target.value as Filters["matchType"] })}
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
@@ -180,8 +186,8 @@ export default function Home() {
 
               {/* Pair Mode */}
               <div>
-                <label className="text-sm text-white/70">Parejas</label>
-                <select
+                <label htmlFor="field-4" className="text-sm text-white/70">Parejas</label>
+                <select id="field-4"
                   value={filters.pairMode}
                   onChange={(e) => setFilters({ ...filters, pairMode: e.target.value as Filters["pairMode"] })}
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
@@ -194,8 +200,8 @@ export default function Home() {
 
               {/* Status */}
               <div>
-                <label className="text-sm text-white/70">Estado</label>
-                <select
+                <label htmlFor="field-5" className="text-sm text-white/70">Estado</label>
+                <select id="field-5"
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value as Filters["status"] })}
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
@@ -229,7 +235,7 @@ export default function Home() {
       </header>
 
       {/* Results Counter */}
-      {!loading && (
+      {!loading && signedIn && (
         <div className="mb-4 text-sm text-white/60">
           Mostrando {filteredEvents.length} de {events.length} partidas
         </div>
@@ -240,16 +246,14 @@ export default function Home() {
       {!loading && errorMsg && (
         <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <p className="text-mm-card font-semibold">Error cargando partidas</p>
-          <p className="mt-1 text-sm text-white/70">{errorMsg}</p>
-          <p className="mt-2 text-sm text-white/70">
-            Revisa que exista la vista{" "}
-            <code className="text-mm-card">events_with_counts</code> y que RLS permita SELECT.
-          </p>
+
+          <p className="mt-2 text-sm text-white/70">No hemos podido cargar las partidas. Comprueba tu conexión e inténtalo de nuevo.</p>
         </div>
       )}
 
-      {!loading && !errorMsg && filteredEvents.length === 0 && (
-        <p className="text-white/70">
+      {!loading && !signedIn && <div className="mm-empty"><h2 className="text-xl font-semibold text-mm-card">Hay sitio para ti</h2><p className="my-3">Entra para encontrar partidas y conocer a otros jugadores.</p><Link className="btn-primary mx-auto max-w-xs" href="/login">Entrar a MusMatch</Link></div>}
+      {!loading && signedIn && !errorMsg && filteredEvents.length === 0 && (
+        <p className="mm-empty">
           No hay partidas para este filtro. Crea una para empezar.
         </p>
       )}

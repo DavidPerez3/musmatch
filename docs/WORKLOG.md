@@ -390,3 +390,8 @@ Exportación estática con base /musmatch, detalle de partida por query, rutas O
 ## 2026-10-14 — Fase 0: seguridad y CI
 
 Migración versionada para permisos de perfiles/partidas, RPC allowlist, vistas con RLS, capacidad de equipos, invalidación de presencia, ELO aplicado una sola vez y timeout neutral con revisión. Retirada legacy vía RPC. Lint corregido sin desactivar reglas; TypeScript y build obligatorio. Tests con seis usuarios ficticios en PostgreSQL aislado, esquema limpio y variante heredada cloud; validación de export PWA. Ver PHASE_0.md para alcance y limitaciones.
+
+
+## 2026-10-15 — Fase 1: móvil y automatización de revisión
+
+Navegación inferior móvil/tablet y superior escritorio, paleta Tailwind 4, formularios táctiles, ranking en tarjetas, detalle con accesos rápidos y corrección de textos. Playwright prueba diez rutas en seis tamaños con backend interceptado, además de interacciones y estados de error/vacío; informes en Actions. Se conserva la suite SQL de fase 0. Cron cloud cada cinco minutos verificado. Alcance y pendientes en PHASE_1.md; roadmap actualizado para distinguir la secuencia actual del plan histórico.

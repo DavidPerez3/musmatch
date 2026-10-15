@@ -85,7 +85,7 @@ export default function UsersPage() {
     }, [loadMyFriends]);
 
     return (
-        <main className="mx-auto max-w-4xl px-4 py-8">
+        <main className="mm-page max-w-4xl">
             <h1 className="text-3xl font-bold text-mm-card">Buscar Usuarios</h1>
             <p className="mt-2 text-white/70">Encuentra y añade amigos</p>
 
@@ -96,7 +96,7 @@ export default function UsersPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && searchUsers()}
-                    className="flex-1 rounded-xl border border-white/10 bg-mm-bg2 px-4 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
+                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-mm-bg2 px-4 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 />
                 <button
                     onClick={searchUsers}
@@ -114,7 +114,7 @@ export default function UsersPage() {
                         return (
                             <div
                                 key={user.id}
-                                className="flex items-center justify-between rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+                                className="flex mm-stack items-center justify-between rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
                             >
                                 <div>
                                     <h3 className="font-semibold text-mm-card">

@@ -171,7 +171,7 @@ export default function MyMatchesPage() {
   }, [events]);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
+    <main className="mm-page max-w-5xl">
       <h1 className="text-3xl font-bold text-mm-card">Mis partidas</h1>
       <p className="mt-2 text-white/70">Vista rapida de tus pendientes y actividad</p>
 

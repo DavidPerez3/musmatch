@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-8">
+    <main className="mm-page max-w-md">
       <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">Cambiar contraseña</h1>
         <p className="mt-1 text-sm text-white/70">
