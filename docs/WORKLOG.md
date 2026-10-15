@@ -395,3 +395,8 @@ Migración versionada para permisos de perfiles/partidas, RPC allowlist, vistas 
 ## 2026-10-15 — Fase 1: móvil y automatización de revisión
 
 Navegación inferior móvil/tablet y superior escritorio, paleta Tailwind 4, formularios táctiles, ranking en tarjetas, detalle con accesos rápidos y corrección de textos. Playwright prueba diez rutas en seis tamaños con backend interceptado, además de interacciones y estados de error/vacío; informes en Actions. Se conserva la suite SQL de fase 0. Cron cloud cada cinco minutos verificado. Alcance y pendientes en PHASE_1.md; roadmap actualizado para distinguir la secuencia actual del plan histórico.
+
+
+## 2026-10-15 — Fase 2: contrato y marcador
+
+Modalidad, tantos, juegos/vacas y reglas locales se eligen antes de crear y quedan fijados. Resumen en inicio/mis partidas y ficha antes de apuntarse; filtros de formato. Marcador A–B estructurado y validado en UI/SQL para partidas nuevas; antiguas sin reglas inferidas. Nueva RPC y migración con permisos explícitos, RLS preservado. 24 escenarios SQL × dos esquemas y 12 pruebas de navegador. El usuario confirma Google Auth recuperado y botón correcto; Android probado, iOS pendiente. Ver PHASE_2.md para alcance y límites.

@@ -1,5 +1,6 @@
 "use client";
 
+import { MatchRules, RulesVariant, rulesSummary } from "@/lib/matchRules";
 import { eventPath } from "@/lib/paths";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,7 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 type MatchType = "FRIENDLY" | "COMPETITIVE";
 type PairMode = "FIXED_PAIR" | "NEED_PARTNER";
 
-type EventRow = {
+type EventRow = MatchRules & {
   id: string;
   title: string;
   location_text: string | null;
@@ -25,6 +26,10 @@ type EventRow = {
 };
 
 type Filters = {
+  rulesVariant: "ALL" | RulesVariant;
+  points: string;
+  games: string;
+  vacas: string;
   location: string;
   dateFrom: string;
   matchType: "ALL" | "FRIENDLY" | "COMPETITIVE";
@@ -47,6 +52,10 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
+    rulesVariant: "ALL",
+    points: "ALL",
+    games: "ALL",
+    vacas: "ALL",
     location: "",
     dateFrom: "",
     matchType: "ALL",
@@ -62,7 +71,10 @@ export default function Home() {
 
       const { data: sessionData } = await supabase.auth.getSession();
       setSignedIn(!!sessionData.session);
-      if (!sessionData.session) { setLoading(false); return; }
+      if (!sessionData.session) {
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("events_with_counts")
         .select("*")
@@ -82,8 +94,25 @@ export default function Home() {
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
+      if (
+        filters.rulesVariant !== "ALL" &&
+        e.rules_variant !== filters.rulesVariant
+      )
+        return false;
+      if (
+        filters.points !== "ALL" &&
+        e.points_per_game !== Number(filters.points)
+      )
+        return false;
+      if (filters.games !== "ALL" && e.games_to_win !== Number(filters.games))
+        return false;
+      if (filters.vacas !== "ALL" && e.vacas_to_win !== Number(filters.vacas))
+        return false;
       // Location filter
-      if (filters.location && !e.location_text?.toLowerCase().includes(filters.location.toLowerCase())) {
+      if (
+        filters.location &&
+        !e.location_text?.toLowerCase().includes(filters.location.toLowerCase())
+      ) {
         return false;
       }
 
@@ -122,7 +151,15 @@ export default function Home() {
       <header className="mb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-mm-gold">A la mesa</p><h1 className="text-3xl font-bold text-mm-card">Tu próxima partida</h1><p className="mt-2 text-sm text-white/60">Encuentra pareja, reúne a cuatro y disfruta del mus.</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-mm-gold">
+              A la mesa
+            </p>
+            <h1 className="text-3xl font-bold text-mm-card">
+              Tu próxima partida
+            </h1>
+            <p className="mt-2 text-sm text-white/60">
+              Encuentra pareja, reúne a cuatro y disfruta del mus.
+            </p>
           </div>
 
           <div className="flex gap-2">
@@ -145,37 +182,58 @@ export default function Home() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div id="filtros" className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div
+            id="filtros"
+            className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+          >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Location */}
               <div>
-                <label htmlFor="field-1" className="text-sm text-white/70">Ubicación</label>
-                <input id="field-1"
+                <label htmlFor="field-1" className="text-sm text-white/70">
+                  Ubicación
+                </label>
+                <input
+                  id="field-1"
                   type="text"
                   placeholder="Buscar ubicación..."
                   value={filters.location}
-                  onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, location: e.target.value })
+                  }
                   className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
 
               {/* Date From */}
               <div>
-                <label htmlFor="field-2" className="text-sm text-white/70">Desde fecha</label>
-                <input id="field-2"
+                <label htmlFor="field-2" className="text-sm text-white/70">
+                  Desde fecha
+                </label>
+                <input
+                  id="field-2"
                   type="date"
                   value={filters.dateFrom}
-                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, dateFrom: e.target.value })
+                  }
                   className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 />
               </div>
 
               {/* Match Type */}
               <div>
-                <label htmlFor="field-3" className="text-sm text-white/70">Tipo</label>
-                <select id="field-3"
+                <label htmlFor="field-3" className="text-sm text-white/70">
+                  Tipo
+                </label>
+                <select
+                  id="field-3"
                   value={filters.matchType}
-                  onChange={(e) => setFilters({ ...filters, matchType: e.target.value as Filters["matchType"] })}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      matchType: e.target.value as Filters["matchType"],
+                    })
+                  }
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="ALL">Todas</option>
@@ -186,10 +244,18 @@ export default function Home() {
 
               {/* Pair Mode */}
               <div>
-                <label htmlFor="field-4" className="text-sm text-white/70">Parejas</label>
-                <select id="field-4"
+                <label htmlFor="field-4" className="text-sm text-white/70">
+                  Parejas
+                </label>
+                <select
+                  id="field-4"
                   value={filters.pairMode}
-                  onChange={(e) => setFilters({ ...filters, pairMode: e.target.value as Filters["pairMode"] })}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      pairMode: e.target.value as Filters["pairMode"],
+                    })
+                  }
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="ALL">Todas</option>
@@ -200,10 +266,18 @@ export default function Home() {
 
               {/* Status */}
               <div>
-                <label htmlFor="field-5" className="text-sm text-white/70">Estado</label>
-                <select id="field-5"
+                <label htmlFor="field-5" className="text-sm text-white/70">
+                  Estado
+                </label>
+                <select
+                  id="field-5"
                   value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value as Filters["status"] })}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      status: e.target.value as Filters["status"],
+                    })
+                  }
                   className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <option value="ALL">Todos</option>
@@ -214,16 +288,112 @@ export default function Home() {
                 </select>
               </div>
 
+              <div>
+                <label
+                  htmlFor="filter-rulesVariant"
+                  className="text-sm text-white/70"
+                >
+                  Modalidad de mus
+                </label>
+                <select
+                  id="filter-rulesVariant"
+                  value={filters.rulesVariant}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      rulesVariant: e.target.value as Filters["rulesVariant"],
+                    })
+                  }
+                  className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2"
+                >
+                  <option value="ALL">Todas</option>
+                  <option value="EIGHT_KINGS">8 reyes / 8 ases</option>
+                  <option value="FOUR_KINGS">4 reyes / 4 ases</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="filter-points"
+                  className="text-sm text-white/70"
+                >
+                  Tantos por juego
+                </label>
+                <select
+                  id="filter-points"
+                  value={filters.points}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      points: e.target.value as Filters["points"],
+                    })
+                  }
+                  className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2"
+                >
+                  <option value="ALL">Todas</option>
+                  <option value="30">30</option>
+                  <option value="40">40</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="filter-games" className="text-sm text-white/70">
+                  Juegos por vaca
+                </label>
+                <select
+                  id="filter-games"
+                  value={filters.games}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      games: e.target.value as Filters["games"],
+                    })
+                  }
+                  className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2"
+                >
+                  <option value="ALL">Todas</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="filter-vacas" className="text-sm text-white/70">
+                  Vacas por partida
+                </label>
+                <select
+                  id="filter-vacas"
+                  value={filters.vacas}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      vacas: e.target.value as Filters["vacas"],
+                    })
+                  }
+                  className="mm-select mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2"
+                >
+                  <option value="ALL">Todas</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+
               {/* Clear Filters */}
               <div className="flex items-end">
                 <button
-                  onClick={() => setFilters({
-                    location: "",
-                    dateFrom: "",
-                    matchType: "ALL",
-                    pairMode: "ALL",
-                    status: "OPEN",
-                  })}
+                  onClick={() =>
+                    setFilters({
+                      rulesVariant: "ALL",
+                      points: "ALL",
+                      games: "ALL",
+                      vacas: "ALL",
+                      location: "",
+                      dateFrom: "",
+                      matchType: "ALL",
+                      pairMode: "ALL",
+                      status: "OPEN",
+                    })
+                  }
                   className="w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm text-white/70 hover:bg-white/10"
                 >
                   Limpiar filtros
@@ -247,11 +417,26 @@ export default function Home() {
         <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <p className="text-mm-card font-semibold">Error cargando partidas</p>
 
-          <p className="mt-2 text-sm text-white/70">No hemos podido cargar las partidas. Comprueba tu conexión e inténtalo de nuevo.</p>
+          <p className="mt-2 text-sm text-white/70">
+            No hemos podido cargar las partidas. Comprueba tu conexión e
+            inténtalo de nuevo.
+          </p>
         </div>
       )}
 
-      {!loading && !signedIn && <div className="mm-empty"><h2 className="text-xl font-semibold text-mm-card">Hay sitio para ti</h2><p className="my-3">Entra para encontrar partidas y conocer a otros jugadores.</p><Link className="btn-primary mx-auto max-w-xs" href="/login">Entrar a MusMatch</Link></div>}
+      {!loading && !signedIn && (
+        <div className="mm-empty">
+          <h2 className="text-xl font-semibold text-mm-card">
+            Hay sitio para ti
+          </h2>
+          <p className="my-3">
+            Entra para encontrar partidas y conocer a otros jugadores.
+          </p>
+          <Link className="btn-primary mx-auto max-w-xs" href="/login">
+            Entrar a MusMatch
+          </Link>
+        </div>
+      )}
       {!loading && signedIn && !errorMsg && filteredEvents.length === 0 && (
         <p className="mm-empty">
           No hay partidas para este filtro. Crea una para empezar.
@@ -279,6 +464,7 @@ export default function Home() {
                     {e.location_text ?? "Sin ubicación"}
                   </p>
 
+                  <p className="mt-2 text-xs text-mm-gold">{rulesSummary(e)}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
                       {labelMatchType(e.match_type)}

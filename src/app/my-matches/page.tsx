@@ -1,5 +1,6 @@
 "use client";
 
+import { MatchRules, rulesSummary } from "@/lib/matchRules";
 import { eventPath } from "@/lib/paths";
 
 import Link from "next/link";
@@ -9,7 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 type Team = "A" | "B";
 
-type EventRow = {
+type EventRow = MatchRules & {
   id: string;
   title: string;
   starts_at: string;
@@ -48,14 +49,18 @@ function EventCard({ e, badge }: { e: MyEvent; badge: string }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-lg font-semibold text-mm-card">{e.title}</h3>
+          <h3 className="truncate text-lg font-semibold text-mm-card">
+            {e.title}
+          </h3>
           <p className="mt-1 text-sm text-white/70">
-            {new Date(e.starts_at).toLocaleString()} · {e.location_text ?? "Sin ubicacion"}
+            {new Date(e.starts_at).toLocaleString()} ·{" "}
+            {e.location_text ?? "Sin ubicacion"}
           </p>
           <p className="mt-1 text-sm text-white/60">
             {e.match_type === "FRIENDLY" ? "Amistosa" : "Competitiva"} ·{" "}
             {e.pair_mode === "FIXED_PAIR" ? "Pareja fija" : "Necesito pareja"}
           </p>
+          <p className="mt-2 text-xs text-mm-gold">{rulesSummary(e)}</p>
           {e.result_status === "CONFIRMED" && e.winner_team && (
             <p className="mt-1 text-sm text-white/70">
               Resultado: gana equipo {e.winner_team}
@@ -101,7 +106,10 @@ export default function MyMatchesPage() {
         return;
       }
 
-      const partList = (parts ?? []) as Array<{ event_id: string; team: Team | null }>;
+      const partList = (parts ?? []) as Array<{
+        event_id: string;
+        team: Team | null;
+      }>;
       if (partList.length === 0) {
         setEvents([]);
         setLoading(false);
@@ -114,7 +122,7 @@ export default function MyMatchesPage() {
       const { data: evs, error: eErr } = await supabase
         .from("events")
         .select(
-          "id,title,starts_at,location_text,match_type,pair_mode,status,result_status,result_team_a_submitted_at,result_team_b_submitted_at,winner_team,result_score"
+          "id,title,starts_at,location_text,match_type,pair_mode,status,result_status,result_team_a_submitted_at,result_team_b_submitted_at,winner_team,result_score,rules_version,rules_variant,points_per_game,games_to_win,vacas_to_win,house_rules",
         )
         .in("id", ids)
         .order("starts_at", { ascending: true });
@@ -143,14 +151,14 @@ export default function MyMatchesPage() {
       (e) =>
         e.result_status === "PENDING" &&
         isRivalReportSubmitted(e) &&
-        !isMyReportSubmitted(e)
+        !isMyReportSubmitted(e),
     );
 
     const waitingRival = events.filter(
       (e) =>
         e.result_status === "PENDING" &&
         isMyReportSubmitted(e) &&
-        !isRivalReportSubmitted(e)
+        !isRivalReportSubmitted(e),
     );
 
     const disputed = events.filter((e) => e.result_status === "DISPUTED");
@@ -160,11 +168,11 @@ export default function MyMatchesPage() {
         (e.status === "OPEN" || e.status === "FULL") &&
         new Date(e.starts_at).getTime() >= now &&
         e.result_status !== "PENDING" &&
-        e.result_status !== "DISPUTED"
+        e.result_status !== "DISPUTED",
     );
 
     const finished = events.filter(
-      (e) => e.result_status === "CONFIRMED" || e.status === "FINISHED"
+      (e) => e.result_status === "CONFIRMED" || e.status === "FINISHED",
     );
 
     return { needsMyReport, waitingRival, disputed, upcoming, finished };
@@ -173,13 +181,17 @@ export default function MyMatchesPage() {
   return (
     <main className="mm-page max-w-5xl">
       <h1 className="text-3xl font-bold text-mm-card">Mis partidas</h1>
-      <p className="mt-2 text-white/70">Vista rapida de tus pendientes y actividad</p>
+      <p className="mt-2 text-white/70">
+        Vista rapida de tus pendientes y actividad
+      </p>
 
       {loading && <p className="mt-6 text-white/70">Cargando...</p>}
 
       {!loading && errorMsg && (
         <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-          <p className="font-semibold text-mm-card">Error cargando tus partidas</p>
+          <p className="font-semibold text-mm-card">
+            Error cargando tus partidas
+          </p>
           <p className="mt-1 text-sm text-white/70">{errorMsg}</p>
         </div>
       )}
@@ -187,24 +199,36 @@ export default function MyMatchesPage() {
       {!loading && !errorMsg && (
         <div className="mt-6 space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-mm-card">Accion requerida</h2>
-            <p className="mt-1 text-sm text-white/60">El rival ya reporto y falta tu version</p>
+            <h2 className="text-xl font-semibold text-mm-card">
+              Accion requerida
+            </h2>
+            <p className="mt-1 text-sm text-white/60">
+              El rival ya reporto y falta tu version
+            </p>
             <div className="mt-3 space-y-3">
               {sections.needsMyReport.length === 0 ? (
                 <p className="text-sm text-white/60">Nada pendiente aqui.</p>
               ) : (
-                sections.needsMyReport.map((e) => <EventCard key={e.id} e={e} badge="Tu reporte" />)
+                sections.needsMyReport.map((e) => (
+                  <EventCard key={e.id} e={e} badge="Tu reporte" />
+                ))
               )}
             </div>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-mm-card">Esperando rival</h2>
+            <h2 className="text-xl font-semibold text-mm-card">
+              Esperando rival
+            </h2>
             <div className="mt-3 space-y-3">
               {sections.waitingRival.length === 0 ? (
-                <p className="text-sm text-white/60">No hay partidas esperando rival.</p>
+                <p className="text-sm text-white/60">
+                  No hay partidas esperando rival.
+                </p>
               ) : (
-                sections.waitingRival.map((e) => <EventCard key={e.id} e={e} badge="Pendiente rival" />)
+                sections.waitingRival.map((e) => (
+                  <EventCard key={e.id} e={e} badge="Pendiente rival" />
+                ))
               )}
             </div>
           </section>
@@ -215,7 +239,9 @@ export default function MyMatchesPage() {
               {sections.disputed.length === 0 ? (
                 <p className="text-sm text-white/60">Sin disputas activas.</p>
               ) : (
-                sections.disputed.map((e) => <EventCard key={e.id} e={e} badge="Disputa" />)
+                sections.disputed.map((e) => (
+                  <EventCard key={e.id} e={e} badge="Disputa" />
+                ))
               )}
             </div>
           </section>
@@ -224,9 +250,13 @@ export default function MyMatchesPage() {
             <h2 className="text-xl font-semibold text-mm-card">Proximas</h2>
             <div className="mt-3 space-y-3">
               {sections.upcoming.length === 0 ? (
-                <p className="text-sm text-white/60">No tienes partidas proximas.</p>
+                <p className="text-sm text-white/60">
+                  No tienes partidas proximas.
+                </p>
               ) : (
-                sections.upcoming.map((e) => <EventCard key={e.id} e={e} badge="Proxima" />)
+                sections.upcoming.map((e) => (
+                  <EventCard key={e.id} e={e} badge="Proxima" />
+                ))
               )}
             </div>
           </section>
@@ -235,9 +265,13 @@ export default function MyMatchesPage() {
             <h2 className="text-xl font-semibold text-mm-card">Finalizadas</h2>
             <div className="mt-3 space-y-3">
               {sections.finished.length === 0 ? (
-                <p className="text-sm text-white/60">Aun no hay partidas finalizadas.</p>
+                <p className="text-sm text-white/60">
+                  Aun no hay partidas finalizadas.
+                </p>
               ) : (
-                sections.finished.map((e) => <EventCard key={e.id} e={e} badge="Finalizada" />)
+                sections.finished.map((e) => (
+                  <EventCard key={e.id} e={e} badge="Finalizada" />
+                ))
               )}
             </div>
           </section>
