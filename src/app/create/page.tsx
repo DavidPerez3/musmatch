@@ -162,14 +162,14 @@ export default function CreateEventPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-8 text-white/70">
+      <main className="mm-page max-w-2xl text-white/70">
         Cargando…
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
+    <main className="mm-page max-w-2xl">
       <div className="mt-4 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">Crear partida</h1>
         <p className="mt-1 text-sm text-white/70">
@@ -184,8 +184,8 @@ export default function CreateEventPage() {
 
         <form onSubmit={handleCreate} className="mt-6 space-y-5">
           <div>
-            <label className="text-sm text-white/70">Título</label>
-            <input
+            <label htmlFor="field-1" className="text-sm text-white/70">Título</label>
+            <input id="field-1"
               className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -195,8 +195,8 @@ export default function CreateEventPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-sm text-white/70">Fecha y hora</label>
-              <input
+              <label htmlFor="field-2" className="text-sm text-white/70">Fecha y hora</label>
+              <input id="field-2"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 type="datetime-local"
                 value={startsAt}
@@ -205,8 +205,8 @@ export default function CreateEventPage() {
             </div>
 
             <div>
-              <label className="text-sm text-white/70">Ubicación (temporal)</label>
-              <input
+              <label htmlFor="field-3" className="text-sm text-white/70">Ubicación (temporal)</label>
+              <input id="field-3"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
                 value={locationText}
                 onChange={(e) => setLocationText(e.target.value)}
@@ -224,6 +224,7 @@ export default function CreateEventPage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
+                aria-pressed={matchType === "FRIENDLY"}
                 onClick={() => setMatchType("FRIENDLY")}
                 className={`rounded-xl px-4 py-3 text-left ring-1 transition ${matchType === "FRIENDLY"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
@@ -238,6 +239,7 @@ export default function CreateEventPage() {
 
               <button
                 type="button"
+                aria-pressed={matchType === "COMPETITIVE"}
                 onClick={() => setMatchType("COMPETITIVE")}
                 className={`rounded-xl px-4 py-3 text-left ring-1 transition ${matchType === "COMPETITIVE"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
@@ -258,13 +260,14 @@ export default function CreateEventPage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
+                aria-pressed={pairMode === "FIXED_PAIR"}
                 onClick={() => setPairMode("FIXED_PAIR")}
                 className={`rounded-xl px-4 py-3 text-left ring-1 transition ${pairMode === "FIXED_PAIR"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
                   : "bg-white/5 ring-white/10 hover:bg-white/10"
                   } `}
               >
-                <p className="font-semibold text-mm-card">👥 Voy con pareja</p>
+                <p className="font-semibold text-mm-card">Voy con pareja</p>
                 <p className="mt-1 text-sm text-white/70">
                   Tú eliges a tu compañero (lo haremos con invitación).
                 </p>
@@ -272,13 +275,14 @@ export default function CreateEventPage() {
 
               <button
                 type="button"
+                aria-pressed={pairMode === "NEED_PARTNER"}
                 onClick={() => setPairMode("NEED_PARTNER")}
                 className={`rounded-xl px-4 py-3 text-left ring-1 transition ${pairMode === "NEED_PARTNER"
                   ? "bg-mm-gold/20 ring-mm-gold/40"
                   : "bg-white/5 ring-white/10 hover:bg-white/10"
                   } `}
               >
-                <p className="font-semibold text-mm-card">🤝 Necesito pareja</p>
+                <p className="font-semibold text-mm-card">Necesito pareja</p>
                 <p className="mt-1 text-sm text-white/70">
                   Te apuntas solo y el sistema te emparejará.
                 </p>
@@ -337,8 +341,8 @@ export default function CreateEventPage() {
           )}
 
           <div>
-            <label className="text-sm text-white/70">Notas (opcional)</label>
-            <textarea
+            <label htmlFor="field-4" className="text-sm text-white/70">Notas (opcional)</label>
+            <textarea id="field-4"
               className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
               rows={3}
               value={notes}

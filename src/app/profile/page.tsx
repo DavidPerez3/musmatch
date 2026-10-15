@@ -313,40 +313,40 @@ export default function ProfilePage() {
 
   if (loading && !profile) {
     return (
-      <main className="mx-auto max-w-xl px-4 py-8 text-white/70">
+      <main className="mm-page max-w-xl text-white/70">
         Cargando perfil…
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-8">
+    <main className="mm-page max-w-xl">
       <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           {profile?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.avatar_url}
               alt="Avatar"
-              className="h-14 w-14 rounded-2xl object-cover ring-1 ring-white/10"
+              className="shrink-0 h-14 w-14 rounded-2xl object-cover ring-1 ring-white/10"
             />
           ) : (
             <div
-              className="grid h-14 w-14 place-items-center rounded-2xl text-lg font-bold text-white ring-1 ring-white/10"
+              className="shrink-0 grid h-14 w-14 place-items-center rounded-2xl text-lg font-bold text-white ring-1 ring-white/10"
               style={{ background: avatarBg }}
             >
               {initials}
             </div>
           )}
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold text-mm-card">
               {profile?.username ? `@${profile.username}` : "Completa tu perfil"}
             </h1>
             <p className="text-sm text-white/70">{email}</p>
           </div>
 
-          <div className="ml-auto rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+          <div className="w-full sm:w-auto sm:ml-auto rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
             <p className="text-xs text-white/60">ELO</p>
             <p className="text-lg font-bold text-mm-card">{profile?.elo_rating ?? 1000}</p>
           </div>
@@ -363,8 +363,8 @@ export default function ProfilePage() {
 
         <form onSubmit={saveProfile} className="mt-6 space-y-4">
           <div>
-            <label className="text-sm text-white/70">Username</label>
-            <input
+            <label htmlFor="field-1" className="text-sm text-white/70">Username</label>
+            <input id="field-1"
               className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -375,8 +375,8 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="text-sm text-white/70">Nombre (opcional)</label>
-            <input
+            <label htmlFor="field-2" className="text-sm text-white/70">Nombre (opcional)</label>
+            <input id="field-2"
               className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
@@ -418,7 +418,7 @@ export default function ProfilePage() {
               {pendingRequests.map((req) => (
                 <div
                   key={req.id}
-                  className="flex items-center justify-between rounded-xl bg-white/5 p-3 ring-1 ring-white/10"
+                  className="flex mm-stack items-center justify-between rounded-xl bg-white/5 p-3 ring-1 ring-white/10"
                 >
                   <p className="font-medium text-mm-card">
                     @{req.from_username || "Usuario"}
@@ -454,7 +454,7 @@ export default function ProfilePage() {
               {friends.map((friend) => (
                 <div
                   key={friend.id}
-                  className="flex items-center justify-between rounded-xl bg-white/5 p-3 ring-1 ring-white/10"
+                  className="flex mm-stack items-center justify-between rounded-xl bg-white/5 p-3 ring-1 ring-white/10"
                 >
                   <div>
                     <p className="font-medium text-mm-card">
@@ -501,7 +501,7 @@ export default function ProfilePage() {
               {matchHistory.map((match) => (
                 <div
                   key={match.match_id}
-                  className="flex items-center justify-between rounded-xl bg-white/5 p-3 ring-1 ring-white/10"
+                  className="flex mm-stack items-center justify-between rounded-xl bg-white/5 p-3 ring-1 ring-white/10"
                 >
                   <div className="flex-1">
                     <p className="font-medium text-mm-card">{match.title}</p>

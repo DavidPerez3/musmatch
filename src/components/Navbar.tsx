@@ -4,10 +4,13 @@ import { assetPath } from "@/lib/paths";
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import NavIcon, { type IconName } from "./NavIcon";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingActions, setPendingActions] = useState(0);
@@ -113,103 +116,44 @@ export default function Navbar() {
     return () => clearInterval(timer);
   }, [signedIn, loadPendingActions]);
 
-  return (
-    <header className="sticky top-0 z-50 w-full bg-[#052a1e] shadow-lg shadow-black/30 border-b border-black/40">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        {/* LOGO */}
-        <Link href="/" className="flex items-center gap-4">
-          <div className="relative h-16 w-16 overflow-hidden rounded-xl ring-1 ring-white/15">
-            <Image
-              src={assetPath("/brand/musmatch-logo3.png")}
-              alt="MusMatch"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-
-          <span className="text-2xl font-bold tracking-tight text-mm-card">
-            MusMatch
-          </span>
+  const items: Array<{ href: string; label: string; icon: IconName }> = [
+    { href: "/", label: "Partidas", icon: "cards" },
+    { href: "/my-matches", label: "Mis partidas", icon: "calendar" },
+    { href: "/create", label: "Crear", icon: "plus" },
+    { href: "/rankings", label: "Ranking", icon: "trophy" },
+    { href: "/profile", label: "Perfil", icon: "user" },
+  ];
+  const active = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const navigation = (mobile: boolean) => items.map(item => (
+    <Link key={item.href} href={item.href} aria-current={active(item.href) ? "page" : undefined}
+      className={`${mobile ? "mm-bottom-link" : "mm-desktop-link"} ${active(item.href) ? "is-active" : ""} ${item.href === "/create" ? "is-create" : ""}`}>
+      <span className="relative inline-flex"><NavIcon name={item.icon} />
+        {item.href === "/my-matches" && signedIn && pendingActions > 0 && <span className="mm-badge" aria-label={`${pendingActions} acciones pendientes`}>{pendingActions > 9 ? "9+" : pendingActions}</span>}
+      </span>
+      <span>{item.label}</span>
+    </Link>
+  ));
+  return <>
+    <header className="mm-header">
+      <div className="mm-header-inner">
+        <Link href="/" className="mm-brand" aria-label="MusMatch, inicio">
+          <Image src={assetPath("/icons/icon-192.png")} alt="" width={40} height={40} priority />
+          <span>MusMatch<span className="mm-brand-caption">Encuentra tu mesa</span></span>
         </Link>
-
-        {/* NAV */}
-        <nav className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            Partidas
-          </Link>
-
-          <Link
-            href="/rankings"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            Rankings
-          </Link>
-
-          <Link
-            href="/create"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            Crear
-          </Link>
-
-          <Link
-            href="/my-matches"
-            className="relative rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            Mis partidas
-            {signedIn && pendingActions > 0 && (
-              <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
-                {pendingActions}
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/profile"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            Perfil
-          </Link>
-
-          <Link
-            href="/users"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          >
-            Usuarios
-          </Link>
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="rounded-xl px-4 py-2 text-sm font-medium text-orange-400 hover:bg-white/10 hover:text-orange-300"
-            >
-              Admin
-            </Link>
-          )}
-
-          <span className="mx-1 hidden h-6 w-px bg-white/20 sm:block" />
-
-          {!signedIn ? (
-            <Link
-              href="/login"
-              className="rounded-xl bg-mm-gold px-5 py-2 text-sm font-semibold text-mm-bg hover:opacity-90"
-            >
-              Entrar
-            </Link>
-          ) : (
-            <button
-              onClick={logout}
-              className="rounded-xl bg-white/10 px-5 py-2 text-sm font-medium text-white hover:bg-white/20"
-            >
-              Salir
-            </button>
-          )}
-        </nav>
+        <nav className="mm-desktop-nav" aria-label="Navegación principal">{navigation(false)}</nav>
+        <div className="mm-account-actions">
+          {!signedIn && <Link href="/login" className="mm-login-link">Entrar</Link>}
+          <details className="mm-account-menu" key={pathname}>
+            <summary aria-label="Más opciones"><NavIcon name="people" /></summary>
+            <div className="mm-account-panel">
+              <Link href="/users">Amigos y jugadores</Link>
+              {isAdmin && <Link href="/admin">Administración</Link>}
+              {signedIn ? <button onClick={logout}>Cerrar sesión</button> : <Link href="/login">Acceder a mi cuenta</Link>}
+            </div>
+          </details>
+        </div>
       </div>
     </header>
-  );
+    <nav className="mm-bottom-nav" aria-label="Navegación móvil">{navigation(true)}</nav>
+  </>;
 }

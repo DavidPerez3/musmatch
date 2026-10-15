@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 supabase/.temp/
+
+# browser tests
+/.browser/
+/test-results/
+/playwright-report/

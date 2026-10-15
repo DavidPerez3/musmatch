@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "test:export": "node --test tests/export/*.test.mjs",
-    "test:drift": "MUSMATCH_TEST_CLOUD_DRIFT=1 node --test tests/*.test.mjs"
+    "test:drift": "MUSMATCH_TEST_CLOUD_DRIFT=1 node --test tests/*.test.mjs",
+    "test:ui": "node scripts/prepare-browser.mjs && playwright test"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.89.0",
@@ -20,6 +21,8 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.10",
+    "@playwright/test": "1.64.1",
+    "@sparticuz/chromium": "153.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

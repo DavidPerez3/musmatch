@@ -14,15 +14,19 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#083B2A",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <body className="min-h-screen bg-mm-bg">
+        <a href="#contenido" className="mm-skip-link">Saltar al contenido</a>
         <PwaRegister />
         <Navbar />
-        <main className="mx-auto max-w-5xl px-4 py-6 pt-24">{children}</main>
+        <div id="contenido" tabIndex={-1} className="mm-shell">{children}</div>
       </body>
     </html>
   );
