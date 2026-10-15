@@ -1,6 +1,7 @@
 "use client";
 
 import { assetPath } from "@/lib/paths";
+import Image from "next/image";
 
 import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -161,9 +162,10 @@ export default function LoginPage() {
         <button
           disabled={loading}
           onClick={signInWithGoogle}
-          className="mt-4 w-full rounded-xl bg-white/10 px-4 py-2 font-semibold text-mm-card hover:bg-white/20 disabled:opacity-60"
+          className="mm-google-button mt-4"
         >
-          Continuar con Google
+          <Image src={assetPath("/icons/google-g.png")} alt="" width={20} height={20} />
+          <span>Continuar con Google</span>
         </button>
 
         <div className="my-4 flex items-center gap-3">

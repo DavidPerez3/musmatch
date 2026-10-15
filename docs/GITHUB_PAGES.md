@@ -40,3 +40,15 @@ npm ci
 npm run dev
 
 Definir las dos variables públicas de Supabase en .env.local. Para una exportación equivalente a Pages, usar NEXT_PUBLIC_BASE_PATH=/musmatch con npm run build. El resultado está en out/.
+
+
+## Si Google vuelve a localhost
+
+En Supabase > Authentication > URL Configuration configurar:
+
+- Site URL: `https://davidperez3.github.io/musmatch/`
+- Redirect URLs: añadir exactamente `https://davidperez3.github.io/musmatch/` y `https://davidperez3.github.io/musmatch/reset-password/`.
+
+Guardar ambos ajustes y volver a iniciar sesión desde la web publicada. El frontend ya envía la URL con `/musmatch/`; Supabase puede recurrir a Site URL cuando la URL solicitada no está permitida. Mantener localhost solo como redirección adicional durante desarrollo, nunca como Site URL del piloto publicado. No sustituir la URI de callback de Google: sigue siendo `https://vrnimfsksvkatsfhwfay.supabase.co/auth/v1/callback`.
+
+El botón usa fondo blanco y el logo oficial, guardado localmente desde https://developers.google.com/static/identity/images/g-logo.png, siguiendo https://developers.google.com/identity/branding-guidelines. No depende de cargar una imagen de Google en cada visita.

@@ -58,3 +58,20 @@ test('ranking empty and network failure states',async({page})=>{
  });
  await page.reload();await expect(page.locator('main').getByRole('alert')).toContainText('Comprueba tu conexión');
 });
+
+test('Google sign-in keeps the Pages return URL and official white button',async({page})=>{
+ await mockBackend(page,false);await page.setViewportSize({width:320,height:740});
+ await page.route('**/auth/v1/authorize?**',async route=>{
+  const url=new URL(route.request().url());
+  expect(url.searchParams.get('provider')).toBe('google');
+  expect(url.searchParams.get('redirect_to')).toBe('http://127.0.0.1:4173/musmatch/');
+  await route.fulfill({contentType:'text/html',body:'<h1>Isolated Google handoff</h1>'});
+ });
+ await page.goto('login/');
+ const button=page.getByRole('button',{name:'Continuar con Google',exact:true});
+ await expect(button).toHaveCSS('background-color','rgb(255, 255, 255)');
+ await expect(button.locator('img')).toHaveJSProperty('complete',true);
+ await expect(button.locator('img')).toHaveJSProperty('naturalWidth',200);
+ await button.click();
+ await expect(page.getByRole('heading',{name:'Isolated Google handoff'})).toBeVisible();
+});
