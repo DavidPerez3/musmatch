@@ -138,6 +138,7 @@ test('presence codes reject own/same-team/reused/expired codes and roster change
   assert.equal(await attempt(2),'PROOF_ACCEPTED');assert.equal(await attempt(3),'TOKEN_ALREADY_USED');
   await actor(0,'delete from public.event_participants where event_id=$1 and user_id=$2',[id,ids[0]]);
   assert.equal((await db.query('select count(*)::int as n from public.event_presence_proofs where event_id=$1',[id])).rows[0].n,0);
+  await actor(0,"insert into public.event_participants(event_id,user_id,team) values($1,$2,'A')",[id,ids[0]]);
   const tokenB=(await actor(2,'select public.create_presence_token($1) as data',[id])).rows[0].data.token;
   await db.query("update public.event_presence_tokens set expires_at=now()-interval '1 minute' where event_id=$1",[id]);
   assert.equal((await actor(1,'select public.submit_presence_token($1,$2) as result',[id,tokenB])).rows[0].result,'TOKEN_EXPIRED');
@@ -244,4 +245,34 @@ test('structured disputed score is neutral and admin resolution preserves chosen
  await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);
  await actor(5,"select public.admin_resolve_dispute($1,'A',true)",[id]);
  const row=(await db.query('select result_status,result_score,winner_team from public.events where id=$1',[id])).rows[0];assert.deepEqual(row,{result_status:'CONFIRMED',result_score:'3-1',winner_team:'A'});
+});
+
+test('presence codes live two minutes, reuse only in cooldown and rotation invalidates old QR',async()=>{
+ const id=await match('COMPETITIVE',false);
+ const first=(await actor(0,'select public.create_presence_token($1) as data',[id])).rows[0].data;
+ const record=(await db.query('select created_at,expires_at from public.event_presence_tokens where event_id=$1',[id])).rows[0];
+ assert.equal(new Date(record.expires_at)-new Date(record.created_at),120000);
+ assert.equal((await actor(0,'select public.create_presence_token($1) as data',[id])).rows[0].data.token,first.token);
+ await db.query("update public.event_presence_tokens set created_at=now()-interval '31 seconds' where event_id=$1",[id]);
+ const second=(await actor(0,'select public.create_presence_token($1) as data',[id])).rows[0].data;
+ assert.notEqual(second.token,first.token);
+ assert.equal((await actor(2,'select public.submit_presence_token($1,$2) as r',[id,first.token])).rows[0].r,'TOKEN_EXPIRED');
+ assert.equal((await actor(2,'select public.submit_presence_token($1,$2) as r',[id,second.token])).rows[0].r,'PROOF_ACCEPTED');
+ const status=(await actor(0,'select public.get_my_presence_token_status($1) as data',[id])).rows[0].data;assert.equal(status.token,null);assert.ok(status.next_refresh_at);
+ await denied(0,'select public.create_presence_token($1)',[id]);
+});
+test('presence is bound to game, four assigned seats and active undisputed state',async()=>{
+ const id=await match('COMPETITIVE',false);
+ const other=await match('COMPETITIVE',false);
+ const token=(await actor(0,'select public.create_presence_token($1) as data',[id])).rows[0].data.token;
+ assert.equal((await actor(2,'select public.submit_presence_token($1,$2) as r',[other,token])).rows[0].r,'TOKEN_NOT_FOUND');
+ await actor(0,'delete from public.event_participants where event_id=$1 and user_id=$2',[other,ids[0]]);
+ await denied(2,'select public.create_presence_token($1)',[other]);
+ await denied(2,'select public.submit_presence_token($1,$2)',[other,token]);
+ await denied(4,'select public.create_presence_token($1)',[id]);
+ await denied(4,'select public.submit_presence_token($1,$2)',[id,token]);
+ await db.query("update public.events set result_status='DISPUTED' where id=$1",[id]);
+ await denied(0,'select public.create_presence_token($1)',[id]);
+ await denied(2,'select public.submit_presence_token($1,$2)',[id,token]);
+ assert.equal((await actor(0,'select public.get_my_presence_token_status($1) as data',[id])).rows[0].data.token,null);
 });

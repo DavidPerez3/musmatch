@@ -2,15 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import PresenceCheckIn from "@/components/PresenceCheckIn";
 import MatchRulesCard from "@/components/MatchRulesCard";
 import { MatchRules, scoreTarget } from "@/lib/matchRules";
 import { supabase } from "@/lib/supabaseClient";
-
-type PresenceTokenStatus = {
-  token: string | null;
-  expires_at: string | null;
-  next_refresh_at: string | null;
-};
 
 type Team = "A" | "B";
 
@@ -95,16 +90,6 @@ export default function EventDetail() {
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resultNotice, setResultNotice] = useState<string | null>(null);
-  const [myPresenceCode, setMyPresenceCode] = useState<string | null>(null);
-  const [rivalPresenceCode, setRivalPresenceCode] = useState("");
-  const [myPresenceExpiresAt, setMyPresenceExpiresAt] = useState<string | null>(
-    null,
-  );
-  const [myPresenceNextRefreshAt, setMyPresenceNextRefreshAt] = useState<
-    string | null
-  >(null);
-  const [clockNow, setClockNow] = useState<number>(Date.now());
-
   const teamA = participants.filter((p) => p.team === "A");
   const teamB = participants.filter((p) => p.team === "B");
   const queue = participants.filter((p) => p.team === null);
@@ -116,7 +101,6 @@ export default function EventDetail() {
 
   async function load() {
     if (!id) return;
-    setLoading(true);
     setErrorMsg(null);
 
     const uid = await requireUsername(router);
@@ -348,75 +332,6 @@ export default function EventDetail() {
     }
   }
 
-  async function generatePresenceCode() {
-    if (!me) return;
-    setBusy(true);
-    const { data, error } = await supabase.rpc("create_presence_token", {
-      p_event_id: id,
-    });
-    setBusy(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    const payload = (data as PresenceTokenStatus) || {};
-    setMyPresenceCode(payload.token ?? null);
-    setMyPresenceExpiresAt(payload.expires_at ?? null);
-    setMyPresenceNextRefreshAt(payload.next_refresh_at ?? null);
-  }
-
-  async function loadPresenceTokenStatus() {
-    if (!me) return;
-    const { data, error } = await supabase.rpc("get_my_presence_token_status", {
-      p_event_id: id,
-    });
-    if (error) {
-      return;
-    }
-    const payload = (data as PresenceTokenStatus) || {};
-    setMyPresenceCode(payload.token ?? null);
-    setMyPresenceExpiresAt(payload.expires_at ?? null);
-    setMyPresenceNextRefreshAt(payload.next_refresh_at ?? null);
-  }
-
-  async function submitRivalPresenceCode() {
-    if (!me) return;
-    if (!rivalPresenceCode.trim()) return;
-
-    setBusy(true);
-    const { data, error } = await supabase.rpc("submit_presence_token", {
-      p_event_id: id,
-      p_token: rivalPresenceCode.trim().toUpperCase(),
-    });
-    setBusy(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    const status = (data as string) || "";
-    if (status === "PROOF_ACCEPTED") {
-      setResultNotice("Presencia validada correctamente.");
-      setRivalPresenceCode("");
-      await load();
-      return;
-    }
-
-    const map: Record<string, string> = {
-      TOKEN_NOT_FOUND: "Codigo no encontrado para esta partida.",
-      TOKEN_OWN_USER: "No puedes validar tu propio codigo.",
-      TOKEN_EXPIRED: "El codigo ha expirado.",
-      TOKEN_ALREADY_USED: "Ese codigo ya fue usado.",
-      TOKEN_OWNER_NOT_ACTIVE:
-        "El duenyo del codigo no esta activo en la partida.",
-      TOKEN_SAME_TEAM: "El codigo debe ser de un jugador del equipo rival.",
-    };
-    alert(map[status] ?? `No se pudo validar codigo (${status}).`);
-  }
-
   // Auto-assign suave: si es NEED_PARTNER y hay cola, intentamos asignar
   // (Esto hace que al entrar alguien, se rellenen equipos sin tener que pulsar muchas veces)
   useEffect(() => {
@@ -449,19 +364,6 @@ export default function EventDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setClockNow(Date.now());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!myParticipant?.team) return;
-    loadPresenceTokenStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, myParticipant?.team, me]);
 
   useEffect(() => {
     if (!id) return;
@@ -501,7 +403,7 @@ export default function EventDetail() {
       </p>
     );
 
-  if (loading || !event) {
+  if (loading || !event || event.id !== id) {
     return <p className="p-6 text-white/70">Cargando partida…</p>;
   }
 
@@ -566,15 +468,6 @@ export default function EventDetail() {
   const pendingDeadlineText = event.result_pending_deadline
     ? new Date(event.result_pending_deadline).toLocaleString()
     : null;
-  const expiresMs = myPresenceExpiresAt
-    ? new Date(myPresenceExpiresAt).getTime() - clockNow
-    : 0;
-  const cooldownMs = myPresenceNextRefreshAt
-    ? new Date(myPresenceNextRefreshAt).getTime() - clockNow
-    : 0;
-  const expiresSec = Math.max(0, Math.floor(expiresMs / 1000));
-  const cooldownSec = Math.max(0, Math.floor(cooldownMs / 1000));
-  const canRefreshPresenceCode = cooldownSec <= 0;
 
   return (
     <main className="mm-page max-w-3xl">
@@ -697,7 +590,7 @@ export default function EventDetail() {
             className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
           >
             <p className="font-semibold text-mm-card">
-              Verificacion de presencia (competitiva)
+              Presencia validada (competitiva)
             </p>
             <p className="mt-1 text-sm text-white/70">
               Para reportar resultado en competitiva deben estar validados los 4
@@ -733,63 +626,29 @@ export default function EventDetail() {
                 ))}
             </div>
 
-            {!!myParticipant?.team && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-                  <p className="text-sm text-white/70">
-                    Mi codigo de presencia
-                  </p>
-                  {myPresenceCode ? (
-                    <>
-                      <p className="mt-1 text-lg font-bold tracking-widest text-mm-card">
-                        {myPresenceCode}
-                      </p>
-                      <p className="mt-1 text-xs text-white/60">
-                        Expira en: {Math.floor(expiresSec / 60)}m{" "}
-                        {expiresSec % 60}s
-                      </p>
-                    </>
-                  ) : (
-                    <p className="mt-1 text-sm text-white/60">
-                      Genera un codigo y compartelo con un rival.
-                    </p>
-                  )}
-                  <button
-                    disabled={busy || !canRefreshPresenceCode}
-                    onClick={generatePresenceCode}
-                    className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20"
-                  >
-                    {myPresenceCode
-                      ? canRefreshPresenceCode
-                        ? "Regenerar codigo"
-                        : `Regenerar en ${cooldownSec}s`
-                      : "Generar codigo"}
-                  </button>
-                </div>
-
-                <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-                  <p className="text-sm text-white/70">Validar codigo rival</p>
-                  <input
-                    aria-label="Código de presencia rival"
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                    value={rivalPresenceCode}
-                    onChange={(e) =>
-                      setRivalPresenceCode(e.target.value.toUpperCase())
-                    }
-                    placeholder="Ej: AB3K9Q"
-                    className="mt-2 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
-                  />
-                  <button
-                    disabled={busy || !rivalPresenceCode.trim()}
-                    onClick={submitRivalPresenceCode}
-                    className="mt-3 rounded-xl bg-mm-gold px-3 py-2 text-sm font-semibold text-mm-bg hover:opacity-90 disabled:opacity-50"
-                  >
-                    Validar codigo
-                  </button>
-                </div>
-              </div>
+            {checkedInCount === 4 && (
+              <p role="status" className="mt-3 text-sm text-green-300">
+                Los cuatro jugadores tenéis la presencia validada. Ya podéis
+                registrar el resultado al terminar.
+              </p>
             )}
+            <button
+              type="button"
+              onClick={load}
+              className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-sm"
+            >
+              Actualizar presencia
+            </button>
+            {!!myParticipant?.team &&
+              checkedInCount < 4 &&
+              (event.status === "OPEN" || event.status === "FULL") && (
+                <PresenceCheckIn
+                  key={event.id}
+                  eventId={event.id}
+                  enabled={teamA.length === 2 && teamB.length === 2}
+                  onValidated={load}
+                />
+              )}
           </div>
         )}
 
