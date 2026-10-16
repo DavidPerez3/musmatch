@@ -23,6 +23,26 @@ const messages: Record<string, string> = {
   TOKEN_OWNER_NOT_ACTIVE: "El jugador ya no está activo en la partida.",
   TOKEN_SAME_TEAM: "Escanea a un jugador del equipo rival.",
 };
+function operationError(error: { message: string }) {
+  const known: Record<string, string> = {
+    "No autenticado": "Vuelve a iniciar sesión para validar la presencia.",
+    "Partida no encontrada": "La partida ya no está disponible.",
+    "La partida ya esta cerrada":
+      "La partida está cerrada para nuevas validaciones.",
+    "Solo participantes con equipo pueden generar codigo":
+      "Debes tener una plaza y un equipo en esta partida.",
+    "Solo participantes con equipo pueden validar codigo":
+      "Debes tener una plaza y un equipo en esta partida.",
+    "La presencia requiere dos equipos completos":
+      "La presencia requiere dos equipos completos.",
+    "Espera treinta segundos antes de generar otro código":
+      "Espera treinta segundos antes de generar otro código.",
+  };
+  const message = known[error.message];
+  return typeof message === "string"
+    ? message
+    : "No se ha podido completar la operación. Comprueba tu conexión y vuelve a intentarlo.";
+}
 export default function PresenceCheckIn({
   eventId,
   enabled,
@@ -102,7 +122,7 @@ export default function PresenceCheckIn({
           p_token: token,
         });
         if (error) {
-          setNotice({ text: error.message, error: true });
+          setNotice({ text: operationError(error), error: true });
           return;
         }
         if (data === "PROOF_ACCEPTED") {
@@ -160,7 +180,7 @@ export default function PresenceCheckIn({
       const { data, error } = await supabase.rpc("create_presence_token", {
         p_event_id: eventId,
       });
-      if (error) setNotice({ text: error.message, error: true });
+      if (error) setNotice({ text: operationError(error), error: true });
       else {
         setNow(Date.now());
         setStatus((data as TokenStatus) || EMPTY);

@@ -192,6 +192,21 @@ test("permission denial leaves manual entry available and server replay errors v
       message,
     );
   }
+  await page.route("**/rest/v1/rpc/submit_presence_token", (route) =>
+    route.fulfill({
+      status: 503,
+      json: { message: "Internal database details", code: "XX000" },
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Validar código", exact: true })
+    .click();
+  await expect(page.locator("main").getByRole("alert")).toContainText(
+    "Comprueba tu conexión",
+  );
+  await expect(page.locator("main")).not.toContainText(
+    "Internal database details",
+  );
 });
 
 test("camera is stopped on cancel, navigation and background", async ({
