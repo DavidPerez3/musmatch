@@ -400,3 +400,8 @@ Navegación inferior móvil/tablet y superior escritorio, paleta Tailwind 4, for
 ## 2026-10-15 — Fase 2: contrato y marcador
 
 Modalidad, tantos, juegos/vacas y reglas locales se eligen antes de crear y quedan fijados. Resumen en inicio/mis partidas y ficha antes de apuntarse; filtros de formato. Marcador A–B estructurado y validado en UI/SQL para partidas nuevas; antiguas sin reglas inferidas. Nueva RPC y migración con permisos explícitos, RLS preservado. 24 escenarios SQL × dos esquemas y 12 pruebas de navegador. El usuario confirma Google Auth recuperado y botón correcto; Android probado, iOS pendiente. Ver PHASE_2.md para alcance y límites.
+
+
+## 2026-10-16 — Fase 3: presencia QR
+
+QR de presencia generado localmente, lector de cámara con decodificación local y alternativa manual. Stream detenido al leer/cerrar/navegar/ocultar o por tiempo límite, incluido permiso tardío. Códigos de dos minutos renovables cada treinta segundos, anteriores invalidados y servidor limitado a mesa 2×2 activa. Lectura y generación separadas en componentes; refresco de datos sin desmontar cámara por cada actualización de participantes. 26 escenarios SQL × dos esquemas y 23 pruebas de navegador con vídeo sintético. Cámara física Android/iOS pendiente. Ver PHASE_3.md.

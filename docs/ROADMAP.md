@@ -1,16 +1,16 @@
-# Roadmap vigente — 2026-10-15
+# Roadmap vigente — 2026-10-16
 
 Esta secuencia sustituye la numeración del plan histórico de mayo que se conserva más abajo.
 
 | Fase | Alcance | Estado |
 | --- | --- | --- |
 | 0 | Seguridad, contratos SQL, ELO idempotente, disputa neutral y CI | Implementada; protección administrativa de main pendiente |
-| 1 | Responsive con prioridad móvil, navegación, accesibilidad básica y pruebas de navegador | Implementada; aceptación física iOS/Android pendiente |
+| 1 | Responsive con prioridad móvil, navegación, accesibilidad básica y pruebas de navegador | Implementada; Android probado por el usuario, iOS pendiente |
 | 2 | Reglas acordadas antes de apuntarse: 8/8 o 4/4, tantos, juegos/vacas y modo; contrato, filtros y marcador validado | Implementada |
-| 3 | Presencia QR sobre códigos cruzados existentes, caducidad y alternativa manual | Siguiente |
-| 4 | Invitaciones, revisión de disputas y piloto cerrado | Pendiente |
+| 3 | Presencia QR sobre códigos cruzados existentes, caducidad y alternativa manual | Implementada; cámara física Android/iOS pendiente |
+| 4 | Invitaciones, revisión de disputas y piloto cerrado | Siguiente |
 
-Ver [PHASE_0.md](PHASE_0.md) [PHASE_1.md](PHASE_1.md) y [PHASE_2.md](PHASE_2.md) para alcance, pruebas y limitaciones. No se considera terminada una función porque exista una pantalla: se exige validación de permisos, reglas y flujo real.
+Ver [PHASE_0.md](PHASE_0.md), [PHASE_1.md](PHASE_1.md), [PHASE_2.md](PHASE_2.md) y [PHASE_3.md](PHASE_3.md) para alcance, pruebas y limitaciones. No se considera terminada una función porque exista una pantalla: se exige validación de permisos, reglas y flujo real.
 
 ---
 
