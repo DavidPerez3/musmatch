@@ -100,3 +100,6 @@ img { max-width: 100%; }
 .mm-google-button { display: flex; justify-content: center; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 12px; border: 1px solid #747775; border-radius: 12px; background: #fff; color: #1f1f1f; font-size: 14px; font-weight: 500; }
 .mm-google-button:hover:not(:disabled) { background: #f8fafd; }
 .mm-google-button img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+
+fieldset { min-inline-size: 0; }
+.mm-input { min-width: 0; max-width: 100%; border: 1px solid #ffffff25; border-radius: .75rem; background: var(--color-mm-bg2, #15251e); color: inherit; padding: .65rem .75rem; min-height: 44px; }

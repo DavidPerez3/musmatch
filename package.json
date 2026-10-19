@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings=0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && node scripts/check-edge.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:export": "node --test tests/export/*.test.mjs",
     "test:drift": "MUSMATCH_TEST_CLOUD_DRIFT=1 node --test tests/*.test.mjs",

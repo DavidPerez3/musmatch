@@ -1,10 +1,13 @@
 "use client";
 
+import DisputeReview from "@/components/DisputeReview";
+import type {MatchRules} from "@/lib/matchRules";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-type DisputedMatch = {
+type DisputedMatch = MatchRules & {
+ match_type:string; result_team_a_winner:string|null; result_team_b_winner:string|null; result_team_a_score:string|null; result_team_b_score:string|null; result_team_a_submitted_at:string|null; result_team_b_submitted_at:string|null; result_resolution_reason:string|null;
     id: string;
     title: string;
     winner_team: "A" | "B" | null;
@@ -49,8 +52,9 @@ export default function AdminPage() {
     const loadDisputedMatches = useCallback(async () => {
         const { data, error } = await supabase
             .from("events")
-            .select("id, title, winner_team, result_score, result_proposed_by, created_at")
+            .select("*")
             .eq("result_status", "DISPUTED")
+ .neq("status", "CANCELLED")
             .order("created_at", { ascending: false });
 
         if (error) {
@@ -104,26 +108,6 @@ export default function AdminPage() {
         await loadPresenceOverview();
         setLoading(false);
     }, [router, loadDisputedMatches, loadPresenceOverview]);
-
-    async function resolveDispute(matchId: string, winner: "A" | "B") {
-        if (!confirm(`¿Confirmar victoria del Equipo ${winner}?`)) return;
-
-        setBusy(true);
-        const { error } = await supabase.rpc("admin_resolve_dispute", {
-            match_id: matchId,
-            winner_team: winner,
-            apply_elo: true,
-        });
-
-        setBusy(false);
-
-        if (error) {
-            alert(error.message);
-        } else {
-            alert("Disputa resuelta correctamente");
-            await loadDisputedMatches();
-        }
-    }
 
     async function searchUsers() {
         if (!searchQuery.trim()) {
@@ -195,37 +179,7 @@ export default function AdminPage() {
                 ) : (
                     <div className="mt-4 space-y-4">
                         {disputedMatches.map((match) => (
-                            <div
-                                key={match.id}
-                                className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
-                            >
-                                <div className="flex mm-stack items-start justify-between gap-4">
-                                    <div>
-                                        <h3 className="font-semibold text-mm-card">{match.title}</h3>
-                                        <p className="text-sm text-white/70">ID: {match.id}</p>
-                                        <p className="mt-1 text-white">
-                                            Resultado propuesto: <span className="font-bold">Equipo {match.winner_team}</span> ({match.result_score})
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <button
-                                            disabled={busy}
-                                            onClick={() => resolveDispute(match.id, "A")}
-                                            className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
-                                        >
-                                            Gana A
-                                        </button>
-                                        <button
-                                            disabled={busy}
-                                            onClick={() => resolveDispute(match.id, "B")}
-                                            className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-500 disabled:opacity-50"
-                                        >
-                                            Gana B
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <DisputeReview key={match.id} match={match} onResolved={loadDisputedMatches}/>
                         ))}
                     </div>
                 )}

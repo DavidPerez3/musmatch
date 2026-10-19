@@ -11,6 +11,7 @@ for(const viewport of screens){
    await expect(page.locator('main')).toBeVisible();
    await expect(page.locator('main')).not.toContainText('Cargando');
    if(route.startsWith('events'))await expect(page.getByRole('heading',{name:'Equipo A'})).toBeVisible();
+   if(route==='create/')expect((await page.getByLabel('Buscar nombre y municipio').boundingBox())?.width).toBeGreaterThanOrEqual(150);
    if(route==='rankings/')await expect(page.locator('.mm-ranking-list li')).toHaveCount(6);
    await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth),{message:`horizontal overflow on ${route||'home'}`}).toBeLessThanOrEqual(1);
    if(viewport.width<1024){
@@ -79,7 +80,7 @@ test('Google sign-in keeps the Pages return URL and official white button',async
 test('rules choices reach creation RPC and match contract is visible before joining',async({page})=>{
  await mockBackend(page);await page.setViewportSize({width:390,height:844});
  let created=false;
- await page.route('**/rest/v1/rpc/create_match_with_rules',async route=>{
+ await page.route('**/rest/v1/rpc/create_match_v2',async route=>{
   const body=route.request().postDataJSON();
   expect(body).toMatchObject({p_rules_variant:'FOUR_KINGS',p_points_per_game:30,p_games_to_win:2,p_vacas_to_win:3,p_house_rules:'Sin deje',p_pair_mode:'NEED_PARTNER'});
   created=true;await route.fulfill({json:eventId});
@@ -91,6 +92,8 @@ test('rules choices reach creation RPC and match contract is visible before join
  await page.getByLabel('Vacas para ganar la partida').selectOption('3');
  await page.getByLabel('Otras reglas acordadas').fill('Sin deje');
  await expect(page.getByRole('region',{name:'Reglas acordadas'})).toContainText('4 reyes / 4 ases · 30 tantos · 2 juegos por vaca · 3 vacas');
+ await page.getByLabel('Ubicación',{exact:true}).fill('Mesa de prueba, Vitoria');
+ await page.getByRole('checkbox',{name:/Me encargo de confirmar/}).check();
  await page.getByRole('button',{name:'Crear partida',exact:true}).click();
  await expect(page).toHaveURL(new RegExp(`events/\\?id=${eventId}`));expect(created).toBe(true);
  await expect(page.getByRole('region',{name:'Reglas acordadas'})).toContainText('Sin juego real');

@@ -116,10 +116,10 @@ test('dispute is neutral and only an admin can resolve it, once',async()=>{
   const id=await match();const before=await scores();
   await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);await actor(2,"select public.submit_team_result($1,'B','1-3')",[id]);
   assert.deepEqual(await scores(),before);
-  await denied(0,"select public.admin_resolve_dispute($1,'A',true)",[id]);
+  await denied(0,"select public.review_match_dispute($1,'A','Reportes y presencia revisados',true)",[id]);
   await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);
-  await actor(5,"select public.admin_resolve_dispute($1,'A',true)",[id]);const resolved=await scores();
-  await denied(5,"select public.admin_resolve_dispute($1,'A',true)",[id]);assert.deepEqual(await scores(),resolved);
+  await actor(5,"select public.review_match_dispute($1,'A','Reportes y presencia revisados',true)",[id]);const resolved=await scores();
+  await denied(5,"select public.review_match_dispute($1,'A','Reportes y presencia revisados',true)",[id]);assert.deepEqual(await scores(),resolved);
 });
 test('expired unanswered report requires review without rating or reliability penalties',async()=>{
   const id=await match();const before=await scores();await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);
@@ -176,7 +176,11 @@ test('friend requests and fixed-pair creation still work through authorized RPCs
   const request=(await actor(1,'select id from public.friend_requests')).rows[0].id;
   await denied(0,'select public.accept_friend_request($1)',[request]);
   await actor(1,'select public.accept_friend_request($1)',[request]);
-  const id=(await actor(0,"select public.create_match_with_rules('Pair',null,now(),null,'FRIENDLY','FIXED_PAIR',$1,'EIGHT_KINGS',40,3,1,null) as id",[ids[1]])).rows[0].id;
+  const id=(await actor(0,"select public.create_match_with_rules('Pair',null,now()+interval '1 hour',null,'FRIENDLY','FIXED_PAIR',$1,'EIGHT_KINGS',40,3,1,null) as id",[ids[1]])).rows[0].id;
+  assert.equal((await db.query('select count(*)::int as n from public.event_participants where event_id=$1',[id])).rows[0].n,1);
+  const invite=(await actor(1,'select id from public.match_invitations where event_id=$1',[id])).rows[0].id;
+  await denied(0,'select public.respond_match_invitation($1,true)',[invite]);
+  await actor(1,'select public.respond_match_invitation($1,true)',[invite]);
   assert.equal((await db.query('select count(*)::int as n from public.event_participants where event_id=$1',[id])).rows[0].n,2);
   await actor(0,'select public.remove_friend($1)',[ids[1]]);
   assert.equal((await actor(0,'select * from public.friendships')).rows.length,0);
@@ -243,7 +247,7 @@ test('structured disputed score is neutral and admin resolution preserves chosen
  const id=await completeRulesMatch();const before=await scores();
  await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);await actor(1,"select public.submit_team_result($1,'B','0-3')",[id]);assert.deepEqual(await scores(),before);
  await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);
- await actor(5,"select public.admin_resolve_dispute($1,'A',true)",[id]);
+ await actor(5,"select public.review_match_dispute($1,'A','Reportes y presencia revisados',true)",[id]);
  const row=(await db.query('select result_status,result_score,winner_team from public.events where id=$1',[id])).rows[0];assert.deepEqual(row,{result_status:'CONFIRMED',result_score:'3-1',winner_team:'A'});
 });
 
@@ -275,4 +279,54 @@ test('presence is bound to game, four assigned seats and active undisputed state
  await denied(0,'select public.create_presence_token($1)',[id]);
  await denied(2,'select public.submit_presence_token($1,$2)',[id,token]);
  assert.equal((await actor(0,'select public.get_my_presence_token_status($1) as data',[id])).rows[0].data.token,null);
+});
+async function locatedMatch(type='PRIVATE_LOCATION',extra={}) {
+ return (await actor(0,`select public.create_match_v2('Prueba ubicación','Gazalbide',now()+interval '1 hour',null,'FRIENDLY','NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null,$1::jsonb) as id`,[JSON.stringify({type,address:'Dirección secreta 42',authorized:true,...extra})])).rows[0].id;
+}
+test('private addresses require accepted membership and disappear from direct reads after leaving',async()=>{
+ const id=await locatedMatch();assert.equal((await actor(0,'select address from public.match_locations where event_id=$1',[id])).rows[0].address,'Dirección secreta 42');
+ assert.equal((await actor(4,'select * from public.match_locations where event_id=$1',[id])).rows.length,0);
+ assert.equal((await actor(4,'select location_text from public.events where id=$1',[id])).rows[0].location_text,'Lugar privado · Gazalbide');
+ await db.query('insert into public.friendships(user_id,friend_id) values($1,$2)',[ids[0],ids[1]]);await actor(0,"select public.invite_match_player($1,$2,'A')",[id,ids[1]]);
+ assert.equal((await actor(1,'select * from public.match_locations where event_id=$1',[id])).rows.length,0);
+ const inv=(await actor(1,'select id from public.match_invitations')).rows[0].id;await actor(1,'select public.respond_match_invitation($1,true)',[inv]);
+ assert.equal((await actor(1,'select * from public.match_locations where event_id=$1',[id])).rows.length,1);
+ await actor(1,'delete from public.event_participants where event_id=$1 and user_id=$2',[id,ids[1]]);assert.equal((await actor(1,'select * from public.match_locations where event_id=$1',[id])).rows.length,0);
+ await denied(0,"update public.match_locations set address='changed' where event_id=$1",[id]);await denied(4,"insert into public.venues(name,status,verified_at) values('Fake','COLLABORATOR',now())");
+});
+test('creation rejects missing authorization, invalid coordinates and past dates atomically',async()=>{
+ for(const loc of [{type:'PRIVATE_LOCATION',address:'Secret',authorized:false},{type:'PUBLIC_VENUE',address:'Bar',authorized:true,latitude:42},{type:'PUBLIC_VENUE',address:'Bar',authorized:true,latitude:999,longitude:0}])await denied(0,`select public.create_match_v2('Invalid','Zona',now()+interval '1 hour',null,'FRIENDLY','NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null,$1::jsonb)`,[JSON.stringify(loc)]);
+ await denied(0,`select public.create_match_v2('Invalid','Zona',now()-interval '1 hour',null,'FRIENDLY','NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null,'{"type":"PUBLIC_VENUE","address":"Bar","authorized":true}')`);
+ assert.equal((await db.query('select count(*)::int as n from public.events')).rows[0].n,0);
+});
+test('public locations are discoverable and candidate venues cannot be promoted by clients',async()=>{
+ const id=await locatedMatch('PUBLIC_VENUE');assert.equal((await actor(4,'select * from public.match_locations where event_id=$1',[id])).rows.length,1);
+ assert.equal((await actor(4,"select * from public.venues where status='COLLABORATOR'")).rows.length,0);await denied(0,"select public.claim_place_search($1,'anything')",[ids[0]]);
+ assert.equal((await db.query("select has_table_privilege('anon','public.match_locations','SELECT') as allowed")).rows[0].allowed,false);
+});
+test('invitation rejection, capacity and replay never enrol players without consent',async()=>{
+ const id=await locatedMatch('PUBLIC_VENUE');await db.query('insert into public.friendships(user_id,friend_id) values($1,$2),($1,$3)',[ids[0],ids[1],ids[4]]);
+ await denied(2,"select public.invite_match_player($1,$2,'A')",[id,ids[1]]);await actor(0,"select public.invite_match_player($1,$2,'A')",[id,ids[1]]);
+ let inv=(await actor(1,'select id from public.match_invitations')).rows[0].id;assert.equal((await actor(2,'select * from public.match_invitations')).rows.length,0);
+ await denied(2,'select public.respond_match_invitation($1,true)',[inv]);await actor(1,'select public.respond_match_invitation($1,false)',[inv]);await denied(1,'select public.respond_match_invitation($1,true)',[inv]);
+ await actor(0,"select public.invite_match_player($1,$2,'A')",[id,ids[1]]);await actor(0,"select public.invite_match_player($1,$2,'A')",[id,ids[4]]);await actor(1,'select public.respond_match_invitation($1,true)',[inv]);
+ inv=(await actor(4,'select id from public.match_invitations')).rows[0].id;await denied(4,'select public.respond_match_invitation($1,true)',[inv]);assert.equal((await db.query('select count(*)::int as n from public.event_participants where event_id=$1',[id])).rows[0].n,2);
+});
+test('organizer cancellation closes invitations and presence without rating penalties',async()=>{
+ const id=await locatedMatch('PUBLIC_VENUE'),before=await scores();await db.query('insert into public.friendships(user_id,friend_id) values($1,$2)',[ids[0],ids[1]]);await actor(0,"select public.invite_match_player($1,$2,'A')",[id,ids[1]]);
+ const inv=(await actor(1,'select id from public.match_invitations')).rows[0].id;await denied(1,"select public.cancel_match($1,'Ya no puedo asistir')",[id]);await denied(0,"select public.cancel_match($1,'x')",[id]);await actor(0,"select public.cancel_match($1,'Ya no puedo asistir')",[id]);
+ assert.equal((await db.query('select status from public.events where id=$1',[id])).rows[0].status,'CANCELLED');await denied(1,'select public.respond_match_invitation($1,true)',[inv]);await denied(1,"insert into public.event_participants(event_id,user_id,team) values($1,$2,'A')",[id,ids[1]]);assert.deepEqual(await scores(),before);
+});
+test('review voids without penalties, requires reason and cannot be forged or replayed',async()=>{
+ const id=await match();await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);await actor(2,"select public.submit_team_result($1,'B','1-3')",[id]);const before=await scores();await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);
+ await denied(0,"select public.review_match_dispute($1,'VOID','No se puede acreditar el resultado',false)",[id]);await denied(5,"select public.review_match_dispute($1,'VOID','x',false)",[id]);await denied(5,"select public.admin_resolve_dispute($1,'A',true)",[id]);
+ await actor(5,"select public.review_match_dispute($1,'VOID','No se puede acreditar el resultado',true)",[id]);assert.deepEqual(await scores(),before);assert.equal((await actor(0,'select applied_elo from public.match_reviews where event_id=$1',[id])).rows[0].applied_elo,false);
+ assert.equal((await actor(4,'select * from public.match_reviews where event_id=$1',[id])).rows.length,0);await denied(5,"select public.review_match_dispute($1,'A','Repetición no permitida',true)",[id]);await denied(0,"insert into public.match_reviews(event_id,reviewer_id,decision,reason,applied_elo) values($1,$2,'VOID','Motivo falsificado',false)",[id,ids[0]]);
+});
+test('provider cache and global throttling are shared and cannot be bypassed by browsers',async()=>{
+ assert.deepEqual((await db.query("select public.claim_place_search($1,'name:first') as gate",[ids[0]])).rows[0].gate,{});assert.equal((await db.query("select public.claim_place_search($1,'name:second') as gate",[ids[1]])).rows[0].gate.busy,true);
+ await db.query("insert into public.place_search_cache(cache_key,results,expires_at) values('name:first','[{\"name\":\"cached\"}]',now()+interval '1 day')");assert.equal((await db.query("select public.claim_place_search($1,'name:first') as gate",[ids[1]])).rows[0].gate.cached[0].name,'cached');await denied(0,'select * from public.place_search_cache');await denied(0,"update public.place_search_limits set next_at=now()-interval '1 day'");
+});
+test('unreported and cancelled games never count as losses in profile history',async()=>{
+ const id=await match('FRIENDLY',false);assert.equal((await actor(0,'select result from public.user_match_history where match_id=$1',[id])).rows[0].result,'PENDING');await actor(0,"select public.cancel_match($1,'No se celebra la partida')",[id]);assert.equal((await actor(0,'select result from public.user_match_history where match_id=$1',[id])).rows[0].result,'CANCELLED');
 });

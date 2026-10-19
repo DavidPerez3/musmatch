@@ -405,3 +405,7 @@ Modalidad, tantos, juegos/vacas y reglas locales se eligen antes de crear y qued
 ## 2026-10-16 — Fase 3: presencia QR
 
 QR de presencia generado localmente, lector de cámara con decodificación local y alternativa manual. Stream detenido al leer/cerrar/navegar/ocultar o por tiempo límite, incluido permiso tardío. Códigos de dos minutos renovables cada treinta segundos, anteriores invalidados y servidor limitado a mesa 2×2 activa. Lectura y generación separadas en componentes; refresco de datos sin desmontar cámara por cada actualización de participantes. 26 escenarios SQL × dos esquemas y 23 pruebas de navegador con vídeo sintético. Cámara física Android/iOS pendiente. Ver PHASE_3.md.
+
+## 2026-10-19 — Fase 4
+
+Invitaciones con aceptación, ubicaciones OSM o privadas protegidas por RLS, catálogo inicial Indartsu/Txustarra como candidatos sin colaboración confirmada. Cancelación con motivo y revisión administrativa registrada con anulación neutral. Corregido historial que confundía pendientes con derrotas. Migración aplicada y función place-search desplegada. Monetización aplazada por decisión del usuario. Ver PHASE_4.md para validación y límites del piloto.

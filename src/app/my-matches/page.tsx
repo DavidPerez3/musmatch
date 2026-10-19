@@ -3,6 +3,7 @@
 import { MatchRules, rulesSummary } from "@/lib/matchRules";
 import { eventPath } from "@/lib/paths";
 
+import InvitationInbox from "@/components/InvitationInbox";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -161,7 +162,7 @@ export default function MyMatchesPage() {
         !isRivalReportSubmitted(e),
     );
 
-    const disputed = events.filter((e) => e.result_status === "DISPUTED");
+    const disputed = events.filter((e) => e.result_status === "DISPUTED" && e.status !== "CANCELLED");
 
     const upcoming = events.filter(
       (e) =>
@@ -175,15 +176,18 @@ export default function MyMatchesPage() {
       (e) => e.result_status === "CONFIRMED" || e.status === "FINISHED",
     );
 
-    return { needsMyReport, waitingRival, disputed, upcoming, finished };
+    const cancelled = events.filter(e=>e.status === "CANCELLED");
+    const pastOpen = events.filter(e=>["OPEN","FULL"].includes(e.status) && !e.result_status && new Date(e.starts_at).getTime()<now);
+    return { needsMyReport, waitingRival, disputed, upcoming, finished, cancelled, pastOpen };
   }, [events]);
 
   return (
     <main className="mm-page max-w-5xl">
       <h1 className="text-3xl font-bold text-mm-card">Mis partidas</h1>
       <p className="mt-2 text-white/70">
-        Vista rapida de tus pendientes y actividad
+        Vista rápida de tus pendientes y actividad
       </p>
+      <InvitationInbox/>
 
       {loading && <p className="mt-6 text-white/70">Cargando...</p>}
 
@@ -261,6 +265,8 @@ export default function MyMatchesPage() {
             </div>
           </section>
 
+          <section><h2 className="text-xl font-semibold">Pendientes de cerrar</h2><p className="mt-1 text-sm text-white/60">La fecha ya pasó. Publica el resultado si jugasteis o cancela si no se celebró.</p><div className="mt-3 space-y-3">{sections.pastOpen.map(e=><EventCard key={e.id} e={e} badge="Sin cerrar"/>)}</div></section>
+          <section><h2 className="text-xl font-semibold">Canceladas y anuladas</h2><div className="mt-3 space-y-3">{sections.cancelled.length?sections.cancelled.map(e=><EventCard key={e.id} e={e} badge="Cancelada"/>):<p className="text-sm text-white/60">Sin partidas canceladas.</p>}</div></section>
           <section>
             <h2 className="text-xl font-semibold text-mm-card">Finalizadas</h2>
             <div className="mt-3 space-y-3">
