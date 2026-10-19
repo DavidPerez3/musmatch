@@ -19,7 +19,7 @@ type MatchHistory = {
   result_score: string | null;
   created_at: string;
   team: "A" | "B";
-  result: "WON" | "LOST" | "PENDING";
+  result: "WON" | "LOST" | "PENDING" | "CANCELLED";
 };
 
 type Friend = {
@@ -120,6 +120,7 @@ export default function ProfilePage() {
       .from("user_match_history")
       .select("*")
       .eq("user_id", user.id)
+      .order("created_at", {ascending:false})
       .limit(10);
 
     setMatchHistory((history || []) as MatchHistory[]);
@@ -516,9 +517,9 @@ export default function ProfilePage() {
                     </span>
                     <span className={`rounded-lg px-3 py-1 text-sm font-bold ${match.result === 'WON'
                       ? 'bg-green-500/20 text-green-400'
-                      : 'bg-red-500/20 text-red-400'
+                      : match.result === 'LOST' ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70'
                       }`}>
-                      {match.result === 'WON' ? '✓ Victoria' : '✗ Derrota'}
+                      {match.result === 'WON' ? '✓ Victoria' : match.result === 'LOST' ? '✗ Derrota' : match.result === 'CANCELLED' ? 'Cancelada' : 'Pendiente'}
                     </span>
                     <span className="text-sm text-white/70">
                       {match.result_score}

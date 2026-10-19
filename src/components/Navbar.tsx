@@ -28,13 +28,15 @@ export default function Navbar() {
   }, []);
 
   const loadPendingActions = useCallback(async (userId: string) => {
+    const {data: invites} = await supabase.from("match_invitations").select("id").eq("invitee_id",userId).eq("status","PENDING");
+    const invitationCount = invites?.length || 0;
     const { data: parts, error: pErr } = await supabase
       .from("event_participants")
       .select("event_id,team")
       .eq("user_id", userId);
 
     if (pErr || !parts || parts.length === 0) {
-      setPendingActions(0);
+      setPendingActions(invitationCount);
       return;
     }
 
@@ -50,7 +52,7 @@ export default function Navbar() {
       .eq("result_status", "PENDING");
 
     if (eErr || !evs) {
-      setPendingActions(0);
+      setPendingActions(invitationCount);
       return;
     }
 
@@ -74,7 +76,7 @@ export default function Navbar() {
       }
     }
 
-    setPendingActions(count);
+    setPendingActions(count + invitationCount);
   }, []);
 
   async function logout() {

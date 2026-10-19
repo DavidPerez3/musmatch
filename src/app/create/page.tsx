@@ -1,5 +1,6 @@
 "use client";
 
+import MatchLocation, {type LocationChoice} from "@/components/MatchLocation";
 import MatchRulesCard from "@/components/MatchRulesCard";
 import { MatchRules, RulesVariant } from "@/lib/matchRules";
 import { eventPath } from "@/lib/paths";
@@ -35,6 +36,7 @@ export default function CreateEventPage() {
   // Form
   const [title, setTitle] = useState("Partida de mus");
   const [locationText, setLocationText] = useState<string>("");
+ const [location,setLocation] = useState<LocationChoice>({type:"PUBLIC_VENUE",address:"",authorized:false});
   const [startsAt, setStartsAt] = useState<string>(() => {
     const d = new Date(Date.now() + 60 * 60 * 1000);
     d.setMinutes(0, 0, 0);
@@ -79,10 +81,11 @@ export default function CreateEventPage() {
     if (!me) return false;
     if (title.trim().length < 3) return false;
     if (!startsAt) return false;
+    if (!location.authorized || !location.address.trim()) return false;
     // Si es FIXED_PAIR, debe seleccionar un amigo
     if (pairMode === "FIXED_PAIR" && !selectedPartnerId) return false;
     return true;
-  }, [me, title, startsAt, pairMode, selectedPartnerId]);
+  }, [me, title, startsAt, pairMode, selectedPartnerId, location]);
 
   useEffect(() => {
     (async () => {
@@ -162,8 +165,9 @@ export default function CreateEventPage() {
 
     // Usar RPC para crear partida con amigo
     const { data: eventId, error } = await supabase.rpc(
-      "create_match_with_rules",
+      "create_match_v2",
       {
+        p_location: location,
         p_rules_variant: rulesVariant,
         p_points_per_game: points,
         p_games_to_win: games,
@@ -200,7 +204,7 @@ export default function CreateEventPage() {
         <p className="mt-1 text-sm text-white/70">
           El mus siempre es{" "}
           <span className="text-mm-card font-medium">2 vs 2</span>. Aquí eliges
-          si es amistosa o competitiva y cómo se forman las parejas.
+          si es amistosa o competitiva y cómo se forman las parejas. Tu compañero recibirá una invitación y deberá aceptarla; no se reserva su plaza.
         </p>
 
         {profile?.username && (
@@ -240,22 +244,8 @@ export default function CreateEventPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="field-3" className="text-sm text-white/70">
-                Ubicación
-              </label>
-              <input
-                id="field-3"
-                className="mt-1 w-full rounded-xl border border-white/10 bg-mm-bg2 px-3 py-2 text-mm-card outline-none focus:ring-2 focus:ring-white/20"
-                value={locationText}
-                onChange={(e) => setLocationText(e.target.value)}
-                placeholder="Ej: Gazalbide"
-              />
-              <p className="mt-1 text-xs text-white/50">
-                Indica el local o punto de encuentro.
-              </p>
-            </div>
           </div>
+          <MatchLocation value={location} onChange={setLocation} publicLabel={locationText} onPublicLabel={setLocationText}/>
 
           {/* Tipo */}
           <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">

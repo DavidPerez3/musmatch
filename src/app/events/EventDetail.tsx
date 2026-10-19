@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import MatchManagement from "@/components/MatchManagement";
 import PresenceCheckIn from "@/components/PresenceCheckIn";
 import MatchRulesCard from "@/components/MatchRulesCard";
 import { MatchRules, scoreTarget } from "@/lib/matchRules";
@@ -33,7 +34,7 @@ type Event = MatchRules & {
   result_resolution_reason: string | null;
   result_pending_since: string | null;
   result_pending_deadline: string | null;
-  status: "OPEN" | "FULL" | "CLOSED" | "FINISHED";
+  status: "OPEN" | "FULL" | "CLOSED" | "FINISHED" | "CANCELLED";
 };
 
 type Participant = {
@@ -407,6 +408,7 @@ export default function EventDetail() {
     return <p className="p-6 text-white/70">Cargando partida…</p>;
   }
 
+  if (event.status === "CANCELLED") return <main className="mm-page max-w-3xl"><h1 className="text-2xl font-bold">{event.title}</h1><p className="mt-3 text-amber-200">Partida cancelada</p><p className="mt-2 break-words">{event.result_resolution_reason}</p><MatchRulesCard rules={event}/><MatchManagement key={`${id}:${myParticipant?.id}:${event.status}:${event.result_status}`} id={id} owner={event.created_by===me} active={false} onChange={load}/></main>;
   const isNeedPartner = event.pair_mode === "NEED_PARTNER";
   const isFixedPair = event.pair_mode === "FIXED_PAIR";
 
@@ -502,6 +504,7 @@ export default function EventDetail() {
         {errorMsg && <p className="mt-3 text-sm text-red-400">{errorMsg}</p>}
 
         <MatchRulesCard rules={event} />
+        <MatchManagement key={`${id}:${myParticipant?.id}:${event.status}:${event.result_status}`} id={id} owner={event.created_by===me} active={["OPEN","FULL"].includes(event.status)&&!event.result_status} onChange={load}/>
         <div id="jugadores" className="mt-6 grid gap-4 sm:grid-cols-2">
           <TeamBox
             name="Equipo A"
@@ -746,15 +749,9 @@ export default function EventDetail() {
         <div className="mt-6 rounded-2xl bg-red-500/10 p-4 ring-1 ring-red-500/30">
           <p className="font-bold text-red-400">Partido en Disputa</p>
           <p className="mt-1 text-sm text-white/70">
-            Un administrador revisara el caso. Si teneis pruebas, contactad con
-            soporte.
+            Un administrador revisará los reportes y la presencia registrada. La resolución y su motivo aparecerán en esta partida.
           </p>
-          <a
-            href={`mailto:soporte@musmatch.com?subject=Disputa%20Partida%20${id}&body=Hola,%0A%0AQuiero%20reportar%20una%20disputa%20en%20la%20partida%20${id}.`}
-            className="mt-3 inline-block rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
-          >
-            Contactar Soporte
-          </a>
+
         </div>
       )}
 
