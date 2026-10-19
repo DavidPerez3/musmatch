@@ -6,6 +6,7 @@ import { eventPath } from "@/lib/paths";
 import MatchRulesCard from "./MatchRulesCard";
 import type { MatchRules } from "@/lib/matchRules";
 type Dispute = MatchRules & {
+  simulation_owner_id?: string | null;
   id: string;
   title: string;
   match_type: string;
@@ -79,7 +80,7 @@ export default function DisputeReview({
   async function resolve() {
     if (
       !confirm(
-        `¿Registrar esta resolución${elo && decision !== "VOID" ? " y aplicar ELO" : ""}?`,
+        `¿Registrar esta resolución${elo && decision !== "VOID" ? (match.simulation_owner_id ? " y calcular puntos de prueba" : " y aplicar ELO") : ""}?`,
       )
     )
       return;
@@ -180,7 +181,9 @@ export default function DisputeReview({
             checked={elo}
             onChange={(e) => setElo(e.target.checked)}
           />
-          Aplicar ELO (requiere los cuatro check-ins)
+          {match.simulation_owner_id
+            ? "Calcular ELO simulado (requiere los cuatro check-ins)"
+            : "Aplicar ELO (requiere los cuatro check-ins)"}
         </label>
       )}
       {message && (

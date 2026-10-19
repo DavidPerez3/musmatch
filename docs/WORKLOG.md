@@ -409,3 +409,7 @@ QR de presencia generado localmente, lector de cámara con decodificación local
 ## 2026-10-19 — Fase 4
 
 Invitaciones con aceptación, ubicaciones OSM o privadas protegidas por RLS, catálogo inicial Indartsu/Txustarra como candidatos sin colaboración confirmada. Cancelación con motivo y revisión administrativa registrada con anulación neutral. Corregido historial que confundía pendientes con derrotas. Migración aplicada y función place-search desplegada. Monetización aplazada por decisión del usuario. Ver PHASE_4.md para validación y límites del piloto.
+
+## 2026-10-19 — Simulador privado
+
+PR #7 fusionada a petición del usuario con CI todavía en cola. Implementado el bloque simulador: capacidad ligada a UUID, tres mocks registrados, mesas privadas sin ELO real, intercambio de códigos real manual o automático, marcadores/victorias/derrotas/disputas/timeout y clasificación de prueba independiente. Se conservan los controles administrativos reales para revisión. Ver PHASE_5_SIMULATOR.md. Los avisos y demás pulido PWA de fase 5 quedan pendientes.

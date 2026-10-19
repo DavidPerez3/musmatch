@@ -126,6 +126,7 @@ export default function MyMatchesPage() {
           "id,title,starts_at,location_text,match_type,pair_mode,status,result_status,result_team_a_submitted_at,result_team_b_submitted_at,winner_team,result_score,rules_version,rules_variant,points_per_game,games_to_win,vacas_to_win,house_rules",
         )
         .in("id", ids)
+        .is("simulation_owner_id", null)
         .order("starts_at", { ascending: true });
 
       if (eErr) {
