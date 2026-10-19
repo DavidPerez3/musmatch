@@ -330,3 +330,94 @@ test('provider cache and global throttling are shared and cannot be bypassed by 
 test('unreported and cancelled games never count as losses in profile history',async()=>{
  const id=await match('FRIENDLY',false);assert.equal((await actor(0,'select result from public.user_match_history where match_id=$1',[id])).rows[0].result,'PENDING');await actor(0,"select public.cancel_match($1,'No se celebra la partida')",[id]);assert.equal((await actor(0,'select result from public.user_match_history where match_id=$1',[id])).rows[0].result,'CANCELLED');
 });
+
+async function simulation(){
+ await db.query('insert into public.simulation_operators(user_id) values($1)',[ids[0]]);
+ for(let i=1;i<4;i++) {await db.query('update public.profiles set is_mock=true where id=$1',[ids[i]]);await db.query('insert into public.simulation_actors(user_id,owner_id,slot) values($1,$2,$3)',[ids[i],ids[0],i]);}
+ return (await actor(0,'select public.create_simulation() as id')).rows[0].id;
+}
+async function simAction(id,slot,action,token=null,winner=null,score=null){return (await actor(0,'select public.simulate_player_action($1,$2,$3,$4,$5,$6) as result',[id,slot,action,token,winner,score])).rows[0].result;}
+test('simulator capability cannot be self-granted, targets only registered mocks and never a real match',async()=>{
+ await denied(0,'select public.create_simulation()');
+ await denied(0,'insert into public.simulation_operators(user_id) values($1)',[ids[0]]);
+ const real=await match();const id=await simulation();
+ await denied(4,'select public.get_simulation_state($1)',[id]);
+ await denied(4,"select public.simulate_player_action($1,2,'GENERATE_TOKEN')",[id]);
+ await denied(0,"select public.simulate_player_action($1,2,'GENERATE_TOKEN')",[real]);
+ await denied(0,"select public.simulate_player_action($1,4,'GENERATE_TOKEN')",[id]);
+ await denied(0,"select public.simulate_player_action($1,2,'BECOME_ADMIN')",[id]);
+ await denied(4,"insert into public.event_participants(event_id,user_id,team) values($1,$2,'B')",[id,ids[4]]);
+ assert.equal((await actor(4,'select * from public.events where id=$1',[id])).rows.length,0);
+ assert.equal((await actor(4,'select * from public.event_participants where event_id=$1',[id])).rows.length,0);
+ assert.equal((await actor(0,'select * from public.events_with_counts where id=$1',[id])).rows.length,0);
+ await denied(0,'update public.events set simulation_owner_id=$2 where id=$1',[real,ids[0]]);
+ for(const name of ['apply_match_elo_live(uuid,public.team_side)','guard_simulation_roster()'])assert.equal((await db.query("select has_function_privilege('authenticated',$1,'EXECUTE') as ok",['public.'+name])).rows[0].ok,false);
+});
+test('manual mock QR follows rival, expiry and single-use rules and restores caller identity',async()=>{
+ const id=await simulation();const rival=await simAction(id,2,'GENERATE_TOKEN');
+ assert.equal((await simAction(id,2,'SCAN_TOKEN',rival.token)).status,'TOKEN_OWN_USER');
+ assert.equal((await simAction(id,3,'SCAN_TOKEN',rival.token)).status,'TOKEN_SAME_TEAM');
+ const own=(await actor(0,'select public.create_presence_token($1) as token',[id])).rows[0].token;
+ assert.equal((await simAction(id,2,'SCAN_TOKEN',own.token)).status,'PROOF_ACCEPTED');
+ assert.equal((await simAction(id,2,'SCAN_TOKEN',own.token)).status,'TOKEN_ALREADY_USED');
+ await actor(0,'select public.submit_presence_token($1,$2)',[id,rival.token]);
+ assert.equal((await actor(0,'select auth.uid() as id')).rows[0].id,ids[0]);
+ // Catch and roll back the rejected operation; the outer actor must still be the owner.
+ await denied(0,"select public.simulate_player_action($1,1,'REPORT',null,'A','3-1')",[id]);
+ assert.equal((await actor(0,'select auth.uid() as id')).rows[0].id,ids[0]);
+ const expired=await simAction(id,3,'GENERATE_TOKEN');
+ await db.query("update public.event_presence_tokens set expires_at=now()-interval '1 second' where event_id=$1 and token=$2",[id,expired.token]);
+ assert.equal((await simAction(id,1,'SCAN_TOKEN',expired.token)).status,'TOKEN_EXPIRED');
+ const snapshot=(await actor(0,'select public.get_simulation_state($1) state',[id])).rows[0].state;
+ assert.equal(snapshot.players.find(p=>p.slot===3).token,null);
+});
+for(const winner of ['A','B'])test(`simulated ${winner} win updates only private ELO preview and leaves real profiles untouched`,async()=>{
+ const id=await simulation(),before=await scores();
+ await actor(0,'select public.simulate_all_presence($1)',[id]);
+ assert.equal((await db.query("select count(*)::int n from public.event_participants where event_id=$1 and attendance_status='CHECKED_IN'",[id])).rows[0].n,4);
+ const score=winner==='A'?'3-1':'1-3';
+ await actor(0,'select public.submit_team_result($1,$2,$3)',[id,winner,score]);
+ await simAction(id,2,'REPORT',null,winner,score);
+ const state=(await actor(0,'select public.get_simulation_state($1) as state',[id])).rows[0].state;
+ assert.equal(state.event.result_status,'CONFIRMED');assert.equal(state.event.elo_applied_at,null);
+ assert.equal(state.scores.find(s=>s.user_id===ids[0]).delta,winner==='A'?16:-16);
+ assert.deepEqual(await scores(),before);
+ assert.equal((await actor(0,'select * from public.user_match_history where match_id=$1',[id])).rows.length,0);
+ await denied(0,"select public.simulate_player_action($1,2,'REPORT',null,'A','3-1')",[id]);
+ assert.deepEqual(await scores(),before);
+});
+test('simulated incompatible reports require real admin review, neutral cancellation and no ELO leakage',async()=>{
+ const id=await simulation(),before=await scores();await actor(0,'select public.simulate_all_presence($1)',[id]);
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);await simAction(id,2,'REPORT',null,'B','1-3');
+ await denied(0,"select public.review_match_dispute($1,'VOID','Pruebas insuficientes',false)",[id]);
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[0]]);
+ await actor(0,"select public.review_match_dispute($1,'VOID','Pruebas insuficientes',false)",[id]);
+ assert.equal((await db.query('select status from public.events where id=$1',[id])).rows[0].status,'CANCELLED');assert.deepEqual(await scores(),before);
+});
+test('simulated timeout is scoped to the owners trial and does not run the global scheduler',async()=>{
+ const real=await match(),id=await simulation();await actor(0,'select public.simulate_all_presence($1)',[id]);
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);
+ await denied(4,'select public.expire_simulation_result($1)',[id]);await denied(0,'select public.expire_simulation_result($1)',[real]);
+ await actor(0,'select public.expire_simulation_result($1)',[id]);
+ assert.equal((await db.query('select result_status from public.events where id=$1',[id])).rows[0].result_status,'DISPUTED');assert.equal((await db.query('select result_status from public.events where id=$1',[real])).rows[0].result_status,null);
+});
+test('mock leaving invalidates presence, incomplete tables cannot validate, and new trials preserve old evidence',async()=>{
+ const id=await simulation();await actor(0,'select public.simulate_all_presence($1)',[id]);await simAction(id,3,'LEAVE');
+ assert.equal((await db.query('select count(*)::int n from public.event_presence_proofs where event_id=$1',[id])).rows[0].n,0);
+ await denied(0,'select public.simulate_all_presence($1)',[id]);await simAction(id,3,'JOIN');
+ await actor(0,'select public.simulate_all_presence($1)',[id]);
+ const next=(await actor(0,'select public.create_simulation() as id')).rows[0].id;assert.notEqual(next,id);
+ assert.equal((await db.query('select count(*)::int n from public.event_presence_proofs where event_id=$1',[id])).rows[0].n,4);
+ assert.equal((await db.query('select count(*)::int n from public.event_presence_proofs where event_id=$1',[next])).rows[0].n,0);
+ await db.query('update public.simulation_operators set enabled=false where user_id=$1',[ids[0]]);
+ await denied(0,'select public.get_simulation_state($1)',[id]);
+});
+test('simulated review victory computes private points; trial identity and mock role stay protected',async()=>{
+ const id=await simulation(),before=await scores();await actor(0,'select public.simulate_all_presence($1)',[id]);await actor(0,"select public.submit_team_result($1,'A','3-1')",[id]);await simAction(id,2,'REPORT',null,'B','1-3');
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[0]]);await actor(0,"select public.review_match_dispute($1,'B','Se acepta el reporte del equipo B',true)",[id]);
+ assert.deepEqual(await scores(),before);assert.equal((await actor(0,'select public.get_simulation_state($1) s',[id])).rows[0].s.scores.find(s=>s.user_id===ids[0]).delta,-16);
+ await denied(0,'update public.profiles set is_mock=false where id=$1',[ids[1]]);
+ await db.exec('SAVEPOINT immutable_simulation');await assert.rejects(db.query('update public.events set simulation_owner_id=null where id=$1',[id]));await db.exec('ROLLBACK TO SAVEPOINT immutable_simulation');
+ const real=(await actor(4,"select public.create_match_with_rules('Real',null,now(),null,'FRIENDLY','NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null) id")).rows[0].id;
+ await denied(1,"insert into public.event_participants(event_id,user_id,team) values($1,$2,'B')",[real,ids[1]]);
+});

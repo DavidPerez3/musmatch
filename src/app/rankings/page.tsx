@@ -20,6 +20,7 @@ export default function RankingsPage() {
       if (!user) { setLoading(false); return; }
       const { data, error } = await supabase.from("profiles")
         .select("id,username,full_name,elo_rating,reliability_score")
+        .eq("is_mock",false)
         .order("elo_rating", { ascending: false }).order("id", { ascending: true }).limit(50);
       if (cancelled) return;
       setError(!!error);

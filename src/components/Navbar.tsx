@@ -49,7 +49,8 @@ export default function Navbar() {
       .from("events")
       .select("id,result_status,result_team_a_submitted_at,result_team_b_submitted_at")
       .in("id", ids)
-      .eq("result_status", "PENDING");
+      .eq("result_status", "PENDING")
+      .is("simulation_owner_id", null);
 
     if (eErr || !evs) {
       setPendingActions(invitationCount);
@@ -149,7 +150,7 @@ export default function Navbar() {
             <summary aria-label="Más opciones"><NavIcon name="people" /></summary>
             <div className="mm-account-panel">
               <Link href="/users">Amigos y jugadores</Link>
-              {isAdmin && <Link href="/admin">Administración</Link>}
+              {isAdmin && <><Link href="/admin">Administración</Link><Link href="/simulator">Simulador de partidas</Link></>}
               {signedIn ? <button onClick={logout}>Cerrar sesión</button> : <Link href="/login">Acceder a mi cuenta</Link>}
             </div>
           </details>

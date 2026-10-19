@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import MatchManagement from "@/components/MatchManagement";
+import Link from "next/link";
 import PresenceCheckIn from "@/components/PresenceCheckIn";
 import MatchRulesCard from "@/components/MatchRulesCard";
 import { MatchRules, scoreTarget } from "@/lib/matchRules";
@@ -20,6 +21,7 @@ type Event = MatchRules & {
   match_type: "FRIENDLY" | "COMPETITIVE";
   pair_mode: "FIXED_PAIR" | "NEED_PARTNER";
   created_by: string;
+  simulation_owner_id?: string | null;
   // Result fields
   winner_team: Team | null;
   result_score: string | null;
@@ -480,6 +482,7 @@ export default function EventDetail() {
       </nav>
       <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">{event.title}</h1>
+        {event.simulation_owner_id && <p className="mt-3 rounded-xl bg-amber-500/10 p-3">Mesa de prueba: el ELO real no cambia. <Link className="underline" href={`/simulator/?id=${id}`}>Abrir controles del simulador</Link></p>}
         <p className="mt-2 text-sm text-white/70">
           {new Date(event.starts_at).toLocaleString()} ·{" "}
           {event.location_text || "Sin ubicación"}
