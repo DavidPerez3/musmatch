@@ -103,3 +103,6 @@ img { max-width: 100%; }
 
 fieldset { min-inline-size: 0; }
 .mm-input { min-width: 0; max-width: 100%; border: 1px solid #ffffff25; border-radius: .75rem; background: var(--color-mm-bg2, #15251e); color: inherit; padding: .65rem .75rem; min-height: 44px; }
+
+.mm-notification-bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid #ffffff24; border-radius: 12px; }
+.mm-notification-bell .mm-badge { right: -3px; top: -4px; }

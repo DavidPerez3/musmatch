@@ -5,12 +5,15 @@ import { assetPath } from "@/lib/paths";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NotificationBell from "./NotificationBell";
+import { removeCurrentPush } from "@/lib/push";
 import NavIcon, { type IconName } from "./NavIcon";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [userId, setUserId] = useState<string|null>(null);
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingActions, setPendingActions] = useState(0);
@@ -81,6 +84,7 @@ export default function Navbar() {
   }, []);
 
   async function logout() {
+    try { await removeCurrentPush(); } catch { /* Local unsubscribe is attempted even offline. */ }
     await supabase.auth.signOut();
   }
 
@@ -88,6 +92,7 @@ export default function Navbar() {
     supabase.auth.getSession().then(async ({ data }) => {
       const session = data.session;
       setSignedIn(!!session);
+      setUserId(session?.user.id || null);
       if (session) {
         await checkAdmin(session.user.id);
         await loadPendingActions(session.user.id);
@@ -99,6 +104,7 @@ export default function Navbar() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setSignedIn(!!session);
+      setUserId(session?.user.id || null);
       if (session) {
         checkAdmin(session.user.id);
         loadPendingActions(session.user.id);
@@ -145,11 +151,13 @@ export default function Navbar() {
         </Link>
         <nav className="mm-desktop-nav" aria-label="Navegación principal">{navigation(false)}</nav>
         <div className="mm-account-actions">
+          <NotificationBell key={userId} userId={userId}/>
           {!signedIn && <Link href="/login" className="mm-login-link">Entrar</Link>}
           <details className="mm-account-menu" key={pathname}>
             <summary aria-label="Más opciones"><NavIcon name="people" /></summary>
             <div className="mm-account-panel">
               <Link href="/users">Amigos y jugadores</Link>
+              {signedIn && <Link href="/notifications">Avisos y notificaciones</Link>}
               {isAdmin && <><Link href="/admin">Administración</Link><Link href="/simulator">Simulador de partidas</Link></>}
               {signedIn ? <button onClick={logout}>Cerrar sesión</button> : <Link href="/login">Acceder a mi cuenta</Link>}
             </div>

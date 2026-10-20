@@ -421,3 +421,102 @@ test('simulated review victory computes private points; trial identity and mock 
  const real=(await actor(4,"select public.create_match_with_rules('Real',null,now(),null,'FRIENDLY','NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null) id")).rows[0].id;
  await denied(1,"insert into public.event_participants(event_id,user_id,team) values($1,$2,'B')",[real,ids[1]]);
 });
+
+const subscription=(suffix='one')=>({endpoint:`https://fcm.googleapis.com/fcm/send/${suffix}`,keys:{p256dh:'B'.repeat(87),auth:'A'.repeat(22)}});
+async function device(i=0,suffix='one') {return (await actor(i,'select public.register_push_subscription($1,$2) as id',[JSON.stringify(subscription(suffix)),'Synthetic device'])).rows[0].id;}
+async function inbox(i=0) {return (await actor(i,'select * from public.notifications order by created_at,id')).rows;}
+async function enqueue(i=0) {await actor(i,'select public.request_test_notification()');}
+async function claim(){return (await db.query('select public.claim_push_batch(30) as jobs')).rows[0].jobs;}
+test('notifications are own-row only, read state is scoped, and server secrets/endpoints stay private',async()=>{
+ await device();await enqueue();const rows=await inbox();assert.equal(rows.length,1);assert.equal((await inbox(1)).length,0);
+ await actor(1,'select public.mark_notifications_read($1)',[[rows[0].id]]);assert.equal((await inbox())[0].read_at,null);
+ await actor(0,'select public.mark_notifications_read($1)',[[rows[0].id]]);assert.ok((await inbox())[0].read_at);
+ for(const table of ['notifications','notification_preferences','push_subscriptions']) await denied(0,`delete from public.${table}`);
+ await denied(0,'select endpoint from public.push_subscriptions');await denied(0,'select * from musmatch_private.push_runtime');
+ for(const f of ['push_runtime_config()','claim_push_batch(integer)','initialize_push_runtime(text,text)','finish_push_delivery(uuid,uuid,integer)','dispatch_push_notifications()']) {
+  assert.equal((await db.query("select has_function_privilege('authenticated',$1,'EXECUTE') as allowed",['public.'+f])).rows[0].allowed,false);
+ }
+ await db.exec('savepoint no_anon; set local role anon');await assert.rejects(db.query('select * from public.notifications'));await db.exec('rollback to savepoint no_anon; reset role');
+});
+test('subscription validation prevents SSRF, endpoint theft, forged preferences and unbounded devices',async()=>{
+ const sid=await device();assert.equal(await device(),sid);
+ await denied(1,'select public.register_push_subscription($1)',[JSON.stringify(subscription())]);
+ for(const url of ['http://fcm.googleapis.com/x','https://127.0.0.1/x','https://fcm.googleapis.com.evil.test/x','https://fcm.googleapis.com@127.0.0.1/x','https://fcm.googleapis.com:444/x']) await denied(0,'select public.register_push_subscription($1)',[JSON.stringify({...subscription(),endpoint:url})]);
+ await denied(0,'select public.save_notification_preferences($1)',[JSON.stringify({user_id:ids[1]})]);
+ await denied(0,'select public.save_notification_preferences($1)',[JSON.stringify({push_enabled:'true'})]);
+ for(let i=2;i<=10;i++)await device(0,String(i));await denied(0,'select public.register_push_subscription($1)',[JSON.stringify(subscription('eleven'))]);
+ await actor(1,'select public.remove_push_subscription($1)',[sid]);assert.equal((await db.query('select count(*)::int n from public.push_subscriptions')).rows[0].n,10);
+ await actor(0,'select public.remove_push_subscription($1)',[sid]);assert.equal((await db.query('select count(*)::int n from public.push_subscriptions')).rows[0].n,9);
+});
+test('invitations and roster events produce inbox notices without unsolicited push opt-in',async()=>{
+ const eid=await match('FRIENDLY',false);
+ await db.query('delete from public.event_participants where event_id=$1 and user_id=$2',[eid,ids[1]]);
+ await db.query("update public.events set starts_at=now()+interval '3 hours' where id=$1",[eid]);
+ await db.query('insert into public.friendships(user_id,friend_id) values($1,$2)',[ids[0],ids[1]]);
+ await actor(0,"select public.invite_match_player($1,$2,'A')",[eid,ids[1]]);
+ const invites=(await inbox(1)).filter(x=>x.category==='invitations');assert.equal(invites.length,1);
+ assert.equal((await db.query('select count(*)::int n from musmatch_private.push_outbox')).rows[0].n,0);
+ const inv=(await db.query('select id from public.match_invitations where event_id=$1',[eid])).rows[0].id;
+ await actor(1,'select public.respond_match_invitation($1,true)',[inv]);
+ assert.ok((await inbox(0)).some(x=>x.body.includes('incorporado')));
+});
+test('results notify only missing rival reporters; final results and cancellation supersede pending pushes',async()=>{
+ const eid=await match();await db.exec('delete from public.notifications');await device(2,'rival');
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[eid]);
+ assert.equal((await inbox(0)).length,0);assert.equal((await inbox(1)).length,0);
+ assert.equal((await inbox(2)).filter(n=>n.category==='results').length,1);assert.equal((await inbox(3)).length,1);
+ await actor(2,"select public.submit_team_result($1,'A','3-1')",[eid]);
+ assert.equal((await inbox(2)).filter(n=>n.title==='Resultado confirmado').length,1);
+ const jobs=await claim();assert.equal(jobs.length,1);assert.equal(jobs[0].category,'results');
+ assert.equal((await db.query("select count(*)::int n from musmatch_private.push_outbox where state='SKIPPED'")).rows[0].n,1);
+});
+test('dispute, reasoned review and cancellation notifications preserve neutrality and pending invitees',async()=>{
+ const eid=await match();await db.exec('delete from public.notifications');
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[eid]);await actor(2,"select public.submit_team_result($1,'B','1-3')",[eid]);
+ assert.equal((await inbox(5)).filter(n=>n.title==='Partida en revisión').length,1);
+ await actor(5,"select public.review_match_dispute($1,'VOID','No hay pruebas suficientes',false)",[eid]);
+ for(let i=0;i<4;i++) assert.ok((await inbox(i)).some(n=>n.title==='Partida cancelada'));
+ assert.equal((await scores())[0].elo_rating,1000);
+});
+test('push leases prevent duplicate claims, stale acknowledgements and retry terminal failures',async()=>{
+ await device();await enqueue();const [job]=await claim();assert.ok(job.lease_token);assert.equal((await claim()).length,0);
+ await db.query('select public.finish_push_delivery($1,$2,201)',[job.id,'00000000-0000-4000-8000-000000000099']);
+ assert.equal((await db.query('select state from musmatch_private.push_outbox')).rows[0].state,'SENDING');
+ await db.query('select public.finish_push_delivery($1,$2,503)',[job.id,job.lease_token]);
+ assert.equal((await db.query('select state from musmatch_private.push_outbox')).rows[0].state,'PENDING');
+ await db.exec("update musmatch_private.push_outbox set available_at=now()-interval '1 second'");
+ const [retry]=await claim();assert.notEqual(retry.lease_token,job.lease_token);
+ await db.query('select public.finish_push_delivery($1,$2,410)',[retry.id,retry.lease_token]);
+ assert.equal((await db.query('select count(*)::int n from public.push_subscriptions')).rows[0].n,0);
+});
+test('preferences opt out of queued push, read notices skip delivery, test sends are rate limited',async()=>{
+ await device();await enqueue();await denied(0,'select public.request_test_notification()');
+ await actor(0,'select public.save_notification_preferences($1)',[JSON.stringify({push_enabled:false})]);assert.equal((await claim()).length,0);
+ await actor(0,'select public.save_notification_preferences($1)',[JSON.stringify({push_enabled:true,matches:false})]);
+ const eid=await match();assert.equal((await inbox(0)).filter(n=>n.category==='matches').length,0);
+ await db.exec('delete from public.notifications');await enqueue();await actor(0,'select public.mark_notifications_read()');assert.equal((await claim()).length,0);
+ await db.query("update public.events set starts_at=now()+interval '20 minutes' where id=$1",[eid]);
+ await actor(0,'select public.save_notification_preferences($1)',[JSON.stringify({reminders:false})]);
+ await db.query('select public.enqueue_match_reminders()');assert.equal((await inbox(0)).filter(n=>n.category==='reminders').length,0);
+});
+test('reminders are deduplicated and leaving the table invalidates queued reminders',async()=>{
+ const eid=await match('FRIENDLY',false);await db.query("update public.events set starts_at=now()+interval '30 minutes' where id=$1",[eid]);
+ await db.exec('delete from public.notifications');await device(1,'leaver');
+ await db.query('select public.enqueue_match_reminders()');await db.query('select public.enqueue_match_reminders()');
+ assert.equal((await inbox(1)).filter(n=>n.category==='reminders').length,1);
+ await actor(1,'delete from public.event_participants where event_id=$1 and user_id=$2',[eid,ids[1]]);
+ assert.equal((await claim()).length,0);
+});
+test('simulator trials and mock actions never generate real inbox or push traffic',async()=>{
+ await db.query('insert into public.simulation_operators(user_id) values($1)',[ids[0]]);
+ for(let i=1;i<4;i++){
+  await db.query('update public.profiles set is_mock=true where id=$1',[ids[i]]);
+  await db.query('insert into public.simulation_actors(owner_id,user_id,slot) values($1,$2,$3)',[ids[0],ids[i],i]);
+ }
+ await device();const eid=(await actor(0,'select public.create_simulation() id')).rows[0].id;
+ await actor(0,'select public.simulate_all_presence($1)',[eid]);
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[eid]);
+ await actor(0,"select public.simulate_player_action($1,2,'REPORT',null,'A','3-1')",[eid]);
+ assert.equal((await db.query('select count(*)::int n from public.notifications')).rows[0].n,0);assert.equal((await claim()).length,0);
+});

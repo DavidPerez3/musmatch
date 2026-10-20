@@ -1,5 +1,6 @@
-type IconName = "cards" | "calendar" | "plus" | "trophy" | "user" | "people";
+type IconName = "cards" | "calendar" | "plus" | "trophy" | "user" | "people" | "bell";
 const paths: Record<IconName, string> = {
+  bell: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4",
   cards: "M7 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM9 9l3-3 3 3-3 3-3-3Zm0 8h6",
   calendar: "M7 3v4m10-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 9h2m4 0h2m-8 3h2",
   plus: "M12 5v14M5 12h14",

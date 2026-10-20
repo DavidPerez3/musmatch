@@ -1,18 +1,18 @@
-# Roadmap vigente — 2026-10-19
+# Roadmap vigente — 2026-10-20
 
 Esta secuencia sustituye la numeración del plan histórico de mayo que se conserva más abajo.
 
 | Fase | Alcance | Estado |
 | --- | --- | --- |
 | 0 | Seguridad, contratos SQL, ELO idempotente, disputa neutral y CI | Implementada; protección administrativa de main pendiente |
-| 1 | Responsive con prioridad móvil, navegación, accesibilidad básica y pruebas de navegador | Implementada; Android probado por el usuario, iOS pendiente |
+| 1 | Responsive con prioridad móvil, navegación, accesibilidad básica y pruebas de navegador | Implementada; Android e instalación PWA probados por el usuario, iOS pendiente |
 | 2 | Reglas acordadas antes de apuntarse: 8/8 o 4/4, tantos, juegos/vacas y modo; contrato, filtros y marcador validado | Implementada |
 | 3 | Presencia QR sobre códigos cruzados existentes, caducidad y alternativa manual | Implementada; cámara física Android/iOS pendiente |
 | 4 | Invitaciones, ubicaciones OSM/privadas y revisión justificada de disputas | Implementada; piloto real pendiente |
-| 5 | Simulador de jugadores, avisos y pulido móvil/PWA | Simulador implementado; avisos y pulido pendientes |
+| 5 | Simulador de jugadores, avisos y pulido móvil/PWA | Simulador, avisos y push implementados; actualización PWA y piloto pendientes |
 | 6 | Piloto con usuarios reales y preparación del MVP público | Pendiente |
 
-Simulador: [PHASE_5_SIMULATOR.md](PHASE_5_SIMULATOR.md).
+Simulador: [PHASE_5_SIMULATOR.md](PHASE_5_SIMULATOR.md). Avisos y push: [PHASE_5_NOTIFICATIONS.md](PHASE_5_NOTIFICATIONS.md).
 
 Ver [PHASE_0.md](PHASE_0.md), [PHASE_1.md](PHASE_1.md), [PHASE_2.md](PHASE_2.md) [PHASE_3.md](PHASE_3.md) y [PHASE_4.md](PHASE_4.md) para alcance, pruebas y limitaciones. No se considera terminada una función porque exista una pantalla: se exige validación de permisos, reglas y flujo real.
 

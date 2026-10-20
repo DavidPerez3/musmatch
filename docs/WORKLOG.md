@@ -413,3 +413,12 @@ Invitaciones con aceptación, ubicaciones OSM o privadas protegidas por RLS, cat
 ## 2026-10-19 — Simulador privado
 
 PR #7 fusionada a petición del usuario con CI todavía en cola. Implementado el bloque simulador: capacidad ligada a UUID, tres mocks registrados, mesas privadas sin ELO real, intercambio de códigos real manual o automático, marcadores/victorias/derrotas/disputas/timeout y clasificación de prueba independiente. Se conservan los controles administrativos reales para revisión. Ver PHASE_5_SIMULATOR.md. Los avisos y demás pulido PWA de fase 5 quedan pendientes.
+
+
+## 2026-10-20 — Fase 5: avisos y Web Push
+
+Campana con contador, bandeja paginada propia, lectura explícita, preferencias por categoría, alta/baja de dispositivos, pausa global y prueba propia. Triggers transaccionales para invitaciones, plantilla de jugadores, cancelación, reportes/disputas/resoluciones y amistades. Recordatorio deduplicado en la hora anterior. Sin tráfico del simulador.
+
+Dispatcher Edge con token privado de scheduler, claves VAPID generadas en servidor y clave privada en Vault; cola con leases, reintentos, caducidad y baja por 404/410. Service worker recibe mensajes genéricos y abre solo MusMatch. Logout retira la suscripción del dispositivo. Sin proveedor de correo ni secretos en frontend.
+
+Validación: 63 pruebas backend/Edge/SW y cloud drift, 53 navegador, lint/TS/build/export. Nube: migración, Edge ACTIVE, inicialización VAPID y scheduler HTTP 200; RLS/registro/cola comprobados con rollback. La recepción física Android se prueba desde el botón de notificación de prueba, iOS físico pendiente. Detalle operativo en PHASE_5_NOTIFICATIONS.md.
