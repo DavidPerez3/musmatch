@@ -229,9 +229,12 @@ test("category preferences persist without removing old inbox notices", async ({
   await expect(
     page.getByRole("checkbox", { name: "Invitaciones", exact: true }),
   ).not.toBeChecked();
-  expect(
-    calls.find((c) => c.name === "save_notification_preferences")?.body,
-  ).toEqual({ p_preferences: { invitations: false } });
+  await expect
+    .poll(
+      () => calls.find((c) => c.name === "save_notification_preferences")?.body,
+    )
+    .toEqual({ p_preferences: { invitations: false } });
+  await expect(page.getByRole("status")).toContainText("Cambios guardados");
   await expect(
     page.getByRole("heading", {
       name: "Invitación a una partida",
