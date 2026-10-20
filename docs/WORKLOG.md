@@ -422,3 +422,10 @@ Campana con contador, bandeja paginada propia, lectura explícita, preferencias 
 Dispatcher Edge con token privado de scheduler, claves VAPID generadas en servidor y clave privada en Vault; cola con leases, reintentos, caducidad y baja por 404/410. Service worker recibe mensajes genéricos y abre solo MusMatch. Logout retira la suscripción del dispositivo. Sin proveedor de correo ni secretos en frontend.
 
 Validación: 63 pruebas backend/Edge/SW y cloud drift, 53 navegador, lint/TS/build/export. Nube: migración, Edge ACTIVE, inicialización VAPID y scheduler HTTP 200; RLS/registro/cola comprobados con rollback. La recepción física Android se prueba desde el botón de notificación de prueba, iOS físico pendiente. Detalle operativo en PHASE_5_NOTIFICATIONS.md.
+
+
+## 2026-10-20 — Fase 5: actualización PWA y conexión
+
+Usuario confirma recepción push en Android. Añadidos aviso de nueva versión, posponer/confirmar recarga, comprobación manual desde Más opciones, controles de red y fallback offline responsive. El build versiona el worker y precarga solo JS/CSS públicos, iconos y pantalla genérica. Consentimiento antes de activar; conserva una versión anterior y no recarga otra pestaña con campos en curso. Sin caché de datos personales ni cola de acciones offline.
+
+Validación: 67 pruebas backend/Edge/worker en ambos esquemas, 55 de navegador (dos nuevas con workers reales y corte/reconexión de red), tres de exportación, lint/TS/build. Fase 5 implementada; siguiente fase: piloto real y preparación operativa del MVP. Ver PHASE_5_PWA.md.

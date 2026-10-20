@@ -157,6 +157,7 @@ export default function Navbar() {
             <summary aria-label="Más opciones"><NavIcon name="people" /></summary>
             <div className="mm-account-panel">
               <Link href="/users">Amigos y jugadores</Link>
+              <button onClick={() => window.dispatchEvent(new Event("musmatch-check-update"))}>Buscar actualizaciones</button>
               {signedIn && <Link href="/notifications">Avisos y notificaciones</Link>}
               {isAdmin && <><Link href="/admin">Administración</Link><Link href="/simulator">Simulador de partidas</Link></>}
               {signedIn ? <button onClick={logout}>Cerrar sesión</button> : <Link href="/login">Acceder a mi cuenta</Link>}

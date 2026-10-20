@@ -3,27 +3,55 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 const source = await readFile("public/sw.js", "utf8");
-function worker(windows = []) {
+function worker(windows = [], options = {}) {
   const listeners = {},
     notices = [],
     opened = [],
     lifecycle = [];
+  const stores = new Map(
+    Object.entries(options.caches || {}).map(([name, entries]) => [
+      name,
+      new Map(Object.entries(entries)),
+    ]),
+  );
+  const key = (request) =>
+    typeof request === "string" ? request : request.url;
+  const network = async (request) => {
+    if (options.networkError) throw new Error("Offline");
+    return new Response("network:" + key(request));
+  };
   vm.runInNewContext(source, {
     URL,
+    Response,
+    fetch: network,
     caches: {
-      open: async () => ({
-        addAll: async (urls) => {
-          lifecycle.push(urls);
-        },
-      }),
+      keys: async () => [...stores.keys()],
+      delete: async (name) => stores.delete(name),
+      open: async (name) => {
+        if (!stores.has(name)) stores.set(name, new Map());
+        const cache = stores.get(name);
+        return {
+          addAll: async (urls) => {
+            if (options.installFailure) throw new Error("Asset unavailable");
+            lifecycle.push(urls);
+            for (const url of urls) cache.set(url, "cached:" + url);
+          },
+          match: async (req) => {
+            const hit = cache.get(key(req));
+            return hit === undefined ? undefined : new Response(hit);
+          },
+          put: async (req, response) => {
+            cache.set(key(req), await response.text());
+          },
+        };
+      },
     },
     self: {
       location: { href: "https://example.test/musmatch/sw.js" },
-      skipWaiting: async () => {
-        lifecycle.push("activated");
-      },
+      skipWaiting: async () => lifecycle.push("activated"),
       registration: { showNotification: async (...args) => notices.push(args) },
       clients: {
+        claim: async () => {},
         matchAll: async () => windows,
         openWindow: async (url) => opened.push(url),
       },
@@ -36,15 +64,20 @@ function worker(windows = []) {
     notices,
     opened,
     lifecycle,
+    stores,
     fire: async (type, event = {}) => {
-      let waiting;
+      let waiting, response;
       listeners[type]({
         ...event,
         waitUntil: (p) => {
           waiting = p;
         },
+        respondWith: (p) => {
+          response = p;
+        },
       });
       await waiting;
+      return response ? await response : undefined;
     },
   };
 }
@@ -116,14 +149,100 @@ test("notification click reuses only MusMatch windows and rejects external or si
   assert.equal(empty.opened[0], "https://example.test/musmatch/notifications/");
 });
 
-test("backward-compatible worker update activates push handlers without waiting for every tab to close", async () => {
+test("worker waits for explicit scoped update consent instead of activating during install", async () => {
   const sw = worker();
   await sw.fire("install");
-  assert.equal(sw.lifecycle[1], "activated");
-  assert.ok(
-    sw.lifecycle[0].every((url) =>
-      url.startsWith("https://example.test/musmatch/"),
-    ),
+  assert.equal(sw.lifecycle.includes("activated"), false);
+  for (const url of [
+    "https://evil.test/musmatch/",
+    "https://example.test/poufer/",
+  ])
+    await sw.fire("message", {
+      data: { type: "MUSMATCH_SKIP_WAITING" },
+      source: { url },
+    });
+  assert.equal(sw.lifecycle.includes("activated"), false);
+  await sw.fire("message", {
+    data: { type: "MUSMATCH_SKIP_WAITING" },
+    source: { url: "https://example.test/musmatch/login/" },
+  });
+  assert.equal(sw.lifecycle.at(-1), "activated");
+});
+test("activation keeps one previous app release and never deletes sibling-app caches", async () => {
+  const sw = worker([], {
+    caches: {
+      "musmatch-/musmatch/-old0": {},
+      "musmatch-/musmatch/-old1": {},
+      "musmatch-/musmatch/-old2": {},
+      "poufer-cache": {},
+    },
+  });
+  await sw.fire("install");
+  await sw.fire("activate");
+  assert.equal(sw.stores.has("musmatch-/musmatch/-old0"), false);
+  assert.equal(sw.stores.has("musmatch-/musmatch/-old1"), false);
+  assert.ok(sw.stores.has("musmatch-/musmatch/-old2"));
+  assert.ok(sw.stores.has("poufer-cache"));
+});
+test("offline navigation uses only a generic fallback; HTML and authenticated data are never cached", async () => {
+  const sw = worker([], { networkError: true });
+  await sw.fire("install");
+  const response = await sw.fire("fetch", {
+    request: {
+      url: "https://example.test/musmatch/events/?id=private-id",
+      method: "GET",
+      mode: "navigate",
+    },
+  });
+  assert.equal(
+    await response.text(),
+    "cached:https://example.test/musmatch/offline.html",
   );
-  assert.ok(sw.lifecycle[0].every((url) => !url.includes("supabase")));
+  for (const request of [
+    { url: "https://project.supabase.co/rest/v1/profiles", method: "GET" },
+    { url: "https://example.test/musmatch/events/", method: "POST" },
+    { url: "https://example.test/poufer/", method: "GET" },
+    { url: "https://example.test/musmatch/events/index.txt", method: "GET" },
+  ])
+    assert.equal(await sw.fire("fetch", { request }), undefined);
+  const entries = [...sw.stores.values()].flatMap((x) => [...x.keys()]);
+  assert.ok(
+    entries.every((x) => !x.includes("private-id") && !x.includes("profiles")),
+  );
+  const empty = worker([], { networkError: true });
+  assert.equal(
+    (
+      await empty.fire("fetch", {
+        request: {
+          url: "https://example.test/musmatch/",
+          method: "GET",
+          mode: "navigate",
+        },
+      })
+    ).status,
+    503,
+  );
+});
+test("immutable chunks from the previous release stay available offline", async () => {
+  const url = "https://example.test/musmatch/_next/static/old-chunk.js";
+  const sw = worker([], {
+    networkError: true,
+    caches: { "musmatch-/musmatch/-previous": { [url]: "old chunk" } },
+  });
+  const response = await sw.fire("fetch", {
+    request: { url, method: "GET", mode: "cors" },
+  });
+  assert.equal(await response.text(), "old chunk");
+});
+
+test("a failed precache install discards only the incomplete release", async () => {
+  const sw = worker([], {
+    installFailure: true,
+    caches: { "musmatch-/musmatch/-working": {}, "other-app": {} },
+  });
+  await assert.rejects(sw.fire("install"));
+  assert.deepEqual(
+    [...sw.stores.keys()],
+    ["musmatch-/musmatch/-working", "other-app"],
+  );
 });

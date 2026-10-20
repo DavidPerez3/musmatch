@@ -106,3 +106,8 @@ fieldset { min-inline-size: 0; }
 
 .mm-notification-bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid #ffffff24; border-radius: 12px; }
 .mm-notification-bell .mm-badge { right: -3px; top: -4px; }
+
+.mm-pwa-status { position: fixed; z-index: 60; right: max(12px, env(safe-area-inset-right)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: min(440px, calc(100vw - 24px)); max-height: min(65dvh, 450px); overflow-y: auto; display: grid; gap: 8px; border-radius: 16px; box-shadow: 0 12px 40px #0006; }
+.mm-pwa-notice { padding: 16px; border: 1px solid #efbb4570; border-radius: 16px; background: #062a1ffa; font-size: 14px; line-height: 1.45; }
+.mm-pwa-notice p + p { margin-top: 6px; }
+@media (min-width: 1024px) { .mm-pwa-status { bottom: max(20px, env(safe-area-inset-bottom)); right: 20px; } }

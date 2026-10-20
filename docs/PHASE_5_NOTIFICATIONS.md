@@ -18,7 +18,7 @@ Los administradores reciben avisos de disputas reales. Las invitaciones se abren
 
 En Avisos → Activar en este dispositivo, la petición de permiso se realiza solo al pulsar. Hay envío de prueba propio, pausa global, preferencias compartidas y eliminación individual de dispositivos. La prueba se limita a una por minuto. Cerrar sesión intenta retirar el vínculo del servidor, con timeout de ocho segundos, y cancela la suscripción local. Cambiar de cuenta no reasigna silenciosamente una suscripción ajena.
 
-En iOS/iPadOS se explica la necesidad de abrir la PWA instalada; si no hay soporte o el permiso está bloqueado, la bandeja continúa funcionando. La compatibilidad física en iOS sigue pendiente. Android requiere la prueba final de recepción en el móvil del usuario.
+En iOS/iPadOS se explica la necesidad de abrir la PWA instalada; si no hay soporte o el permiso está bloqueado, la bandeja continúa funcionando. La compatibilidad física en iOS sigue pendiente. El usuario confirmó la recepción real en Android el 20 de octubre de 2026.
 
 ## Arquitectura y permisos
 
@@ -58,4 +58,4 @@ Para pausar el servicio completo: poner `enabled=false`. La bandeja sigue funcio
 - Nube: migración aplicada, Edge ACTIVE, VAPID inicializado en Vault, scheduler con respuesta 200; registro, bandeja, aislamiento entre cuentas y reclamación probados en una transacción con ROLLBACK, sin entregas externas ni fixtures persistentes.
 - Advisors: ningún ERROR nuevo. Los INFO de RLS sin políticas en tablas exclusivamente servidor son intencionados. Las advertencias de API/GraphQL autenticada reflejan las tablas propias y RPC explícitas con autorización comprobada; permanecen las advertencias previas de citext en public y protección de contraseñas filtradas. Referencias: https://supabase.com/docs/guides/database/database-linter y https://supabase.com/docs/guides/auth/password-security.
 
-Quedan pendientes el pulido de actualización PWA y el piloto con usuarios reales; no se consideran resueltos por este bloque.
+La recepción real en Android ha sido confirmada por el usuario. El pulido posterior de actualización PWA se documenta en PHASE_5_PWA.md; el piloto con usuarios reales sigue pendiente.
