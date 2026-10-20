@@ -15,3 +15,10 @@ test('every public screen is exported and no private server API is published',as
  const worker=await readFile('out/sw.js','utf8');assert.ok(worker.includes('url.origin !== ROOT.origin'));assert.ok(worker.includes('event.request.mode === "navigate"'));
  await access('out/offline.html');
 });
+
+test('release worker precaches only public immutable assets and is versioned by build',async()=>{
+ const worker=await readFile('out/sw.js','utf8');assert.ok(!worker.includes('__MUSMATCH_BUILD__'));assert.ok(!worker.includes('MUSMATCH_PRECACHE'));
+ const version=worker.match(/const VERSION = "([a-f0-9]{16})"/);assert.ok(version);
+ const paths=JSON.parse(worker.match(/const PRECACHE = (\[[^;]+\]);/)[1]);assert.ok(paths.length>5);for(const p of paths){assert.ok(p.startsWith('_next/static/'));assert.ok(/\.(js|css)$/.test(p));await access(path.join('out',p));}
+ assert.ok(!paths.some(p=>p.includes('events/')||p.includes('profile/')||p.includes('auth/')));
+});
