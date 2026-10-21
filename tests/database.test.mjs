@@ -520,3 +520,60 @@ test('simulator trials and mock actions never generate real inbox or push traffi
  await actor(0,"select public.simulate_player_action($1,2,'REPORT',null,'A','3-1')",[eid]);
  assert.equal((await db.query('select count(*)::int n from public.notifications')).rows[0].n,0);assert.equal((await claim()).length,0);
 });
+
+async function pilotMatch(mode='COMPETITIVE') {
+ const eid=(await actor(0,"select public.create_match_with_rules('Field pilot',null,now()+interval '2 hours',null,$1,'NEED_PARTNER',null,'EIGHT_KINGS',40,3,1,null) id",[mode])).rows[0].id;
+ for(let i=1;i<4;i++)await actor(i,'insert into public.event_participants(event_id,user_id,team) values($1,$2,$3)',[eid,ids[i],i<2?'A':'B']);
+ return eid;
+}
+async function pilotState(i,eid){return (await actor(i,'select public.get_pilot_match_state($1) data',[eid])).rows[0].data;}
+async function reportIssue(i=0,{eid=null,title='Camera unavailable',env={platform:'ANDROID',browser:'CHROME',display:'APP'}}={}){
+ return (await actor(i,'select public.report_pilot_issue($1,$2,$3,$4,$5,$6,$7,$8) id',[eid,'PRESENCE','NORMAL',title,'Open the scanner and allow camera','The QR scanner starts','The camera does not start',JSON.stringify(env)])).rows[0].id;
+}
+test('pilot opt-in is organizer-only and does not alter match rules, roster, rating or status',async()=>{
+ const eid=await pilotMatch();const before=(await db.query('select * from public.events where id=$1',[eid])).rows[0],rating=await scores();
+ assert.equal(await pilotState(0,eid),null);await denied(1,'select public.enroll_pilot_match($1)',[eid]);
+ await actor(0,'select public.enroll_pilot_match($1)',[eid]);await actor(0,'select public.enroll_pilot_match($1)',[eid]);
+ assert.equal((await db.query('select count(*)::int n from public.pilot_matches')).rows[0].n,1);assert.deepEqual((await db.query('select * from public.events where id=$1',[eid])).rows[0],before);assert.deepEqual(await scores(),rating);
+ assert.equal((await pilotState(1,eid)).players.length,4);assert.equal(await pilotState(4,eid),null);
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);assert.ok(await pilotState(5,eid));
+ await actor(1,'delete from public.event_participants where event_id=$1 and user_id=$2',[eid,ids[1]]);assert.equal(await pilotState(1,eid),null);
+});
+test('pilot excludes legacy, cancelled and mock games instead of claiming simulated field validation',async()=>{
+ const legacy=await match();await denied(0,'select public.enroll_pilot_match($1)',[legacy]);
+ const eid=await pilotMatch();await db.query('update public.profiles set is_mock=true where id=$1',[ids[1]]);await denied(0,'select public.enroll_pilot_match($1)',[eid]);
+ await db.query('update public.profiles set is_mock=false where id=$1',[ids[1]]);await actor(0,'select public.cancel_match($1,$2)',[eid,'No real pilot this evening']);await denied(0,'select public.enroll_pilot_match($1)',[eid]);
+ await db.query('insert into public.simulation_operators(user_id) values($1)',[ids[0]]);for(let i=1;i<4;i++){await db.query('update public.profiles set is_mock=true where id=$1',[ids[i]]);await db.query('insert into public.simulation_actors(owner_id,user_id,slot) values($1,$2,$3)',[ids[0],ids[i],i]);}
+ const sim=(await actor(0,'select public.create_simulation() id')).rows[0].id;await denied(0,'select public.enroll_pilot_match($1)',[sim]);
+});
+test('pilot state follows real cross-checks and matching reports without exposing tokens or private locations',async()=>{
+ const eid=await pilotMatch();await actor(0,'select public.enroll_pilot_match($1)',[eid]);
+ assert.equal((await pilotState(0,eid)).players.filter(p=>p.checked_in).length,0);
+ for(const [owner,scanner] of [[0,2],[2,0],[1,3],[3,1]]){const token=(await actor(owner,'select public.create_presence_token($1) data',[eid])).rows[0].data.token;await actor(scanner,'select public.submit_presence_token($1,$2)',[eid,token]);}
+ let state=await pilotState(0,eid);assert.equal(state.players.filter(p=>p.checked_in).length,4);assert.ok(!JSON.stringify(state).includes('token'));assert.ok(!JSON.stringify(state).includes('address'));
+ await actor(0,"select public.submit_team_result($1,'A','3-1')",[eid]);state=await pilotState(1,eid);assert.equal(state.report_a,true);assert.equal(state.report_b,false);assert.equal(state.elo_applied,false);
+ await actor(2,"select public.submit_team_result($1,'A','3-1')",[eid]);state=await pilotState(0,eid);assert.equal(state.result_status,'CONFIRMED');assert.equal(state.elo_applied,true);
+});
+test('pilot issue content is private to reporter and admin; event references and metadata cannot be forged',async()=>{
+ const eid=await pilotMatch();const iid=await reportIssue(0,{eid});assert.equal((await actor(0,'select * from public.pilot_issues')).rows.length,1);assert.equal((await actor(1,'select * from public.pilot_issues')).rows.length,0);
+ await denied(4,'select public.report_pilot_issue($1,$2,$3,$4,$5,$6,$7,$8)',[eid,'OTHER','NORMAL','Foreign match','Steps to reproduce','Expected result','Actual result','{}']);
+ for(const env of [{token:'private'},{platform:'ANDROID',browser:'CHROME',display:'BAD'},{platform:null},{browser:{jwt:'secret'}},{platform:'user-defined-value'}])await denied(0,'select public.report_pilot_issue(null,$1,$2,$3,$4,$5,$6,$7)',['OTHER','NORMAL','Bad metadata','Steps to reproduce','Expected','Actual result',JSON.stringify(env)]);
+ await denied(0,"update public.pilot_issues set status='RESOLVED' where id=$1",[iid]);await denied(0,'delete from public.pilot_issues where id=$1',[iid]);await denied(0,'delete from public.pilot_matches');
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);assert.equal((await actor(5,'select * from public.pilot_issues')).rows.length,1);
+ await db.exec('savepoint pilot_anon;set local role anon');await assert.rejects(db.query('select * from public.pilot_issues'));await db.exec('rollback to savepoint pilot_anon;reset role');
+});
+test('incident retries deduplicate and rate limiting cannot be bypassed by direct writes',async()=>{
+ const iid=await reportIssue();assert.equal(await reportIssue(),iid);
+ for(let i=1;i<5;i++)await reportIssue(0,{title:'Different issue '+i});
+ await denied(0,'select public.report_pilot_issue(null,$1,$2,$3,$4,$5,$6,$7)',['OTHER','NORMAL','Sixth report','Steps to reproduce','Expected','Actual result','{}']);
+ await denied(0,'insert into public.pilot_issues(reporter_id,category,severity,title,steps,expected,actual) values($1,$2,$3,$4,$5,$6,$7)',[ids[0],'OTHER','NORMAL','Direct insert','Steps to reproduce','Expected','Actual result']);
+ assert.equal((await db.query('select count(*)::int n from public.pilot_issues')).rows[0].n,5);
+});
+test('only a current admin can triage; notes are mandatory and stale reviews do not overwrite a newer revision',async()=>{
+ const iid=await reportIssue();await denied(0,'select public.review_pilot_issue($1,$2,$3,0)',[iid,'RESOLVED','Issue fixed and retested']);
+ await db.query('update public.profiles set is_admin=true where id=$1',[ids[5]]);await denied(5,'select public.review_pilot_issue($1,$2,$3,0)',[iid,'RESOLVED','short']);
+ await actor(5,'select public.review_pilot_issue($1,$2,$3,0)',[iid,'IN_PROGRESS','Investigating the reported camera problem']);
+ await denied(5,'select public.review_pilot_issue($1,$2,$3,0)',[iid,'DISMISSED','Stale browser request must not win']);
+ await actor(5,'select public.review_pilot_issue($1,$2,$3,1)',[iid,'RESOLVED','Fixed and verified with the reporter']);const row=(await actor(0,'select status,revision,review_note from public.pilot_issues where id=$1',[iid])).rows[0];assert.equal(row.status,'RESOLVED');assert.equal(row.revision,2);assert.ok(row.review_note.includes('verified'));
+ await db.query('update public.profiles set is_admin=false where id=$1',[ids[5]]);await denied(5,'select public.review_pilot_issue($1,$2,$3,2)',[iid,'OPEN','Attempt after administrative role removal']);
+});
