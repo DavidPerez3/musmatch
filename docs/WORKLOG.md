@@ -429,3 +429,12 @@ Validación: 63 pruebas backend/Edge/SW y cloud drift, 53 navegador, lint/TS/bui
 Usuario confirma recepción push en Android. Añadidos aviso de nueva versión, posponer/confirmar recarga, comprobación manual desde Más opciones, controles de red y fallback offline responsive. El build versiona el worker y precarga solo JS/CSS públicos, iconos y pantalla genérica. Consentimiento antes de activar; conserva una versión anterior y no recarga otra pestaña con campos en curso. Sin caché de datos personales ni cola de acciones offline.
 
 Validación: 67 pruebas backend/Edge/worker en ambos esquemas, 55 de navegador (dos nuevas con workers reales y corte/reconexión de red), tres de exportación, lint/TS/build. Fase 5 implementada; siguiente fase: piloto real y preparación operativa del MVP. Ver PHASE_5_PWA.md.
+
+
+## 2026-10-21 — Fase 6: lanzamiento del piloto
+
+Nueva sección Piloto e incidencias: guía de amistosa y competitiva, incorporación explícita por organizador, seguimiento de equipos/presencia/reportes/ELO y formulario privado de incidencias con revisión administrativa justificada. Excluye simulaciones/mocks y no genera quedadas, resultados o reservas ficticias. Solo guarda etiquetas mínimas de dispositivo/navegador indicadas al enviar el reporte.
+
+Validación: 73 pruebas backend/Edge/worker estándar y drift, 68 de navegador, tres de exportación, lint/TS/build. En Supabase, inscripción, lectura, reporte, revisión y aislamiento entre cuentas verificados con rollback. La CLI generó el archivo local, pero la revisión automática bloqueó su intento de telemetría a PostHog; se continuó con SQL local y el conector, sin autorizar telemetría.
+
+Piloto presencial y aceptación pendientes de la quedada; producción pública y operativa siguen abiertas. Guía y criterios en PHASE_6_PILOT.md.
