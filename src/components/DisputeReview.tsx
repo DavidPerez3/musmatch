@@ -97,7 +97,7 @@ export default function DisputeReview({
     else await onResolved();
   }
   return (
-    <article className="rounded-2xl bg-white/5 p-4 space-y-3 ring-1 ring-white/10">
+    <article className="mm-panel rounded-2xl bg-white/5 p-4 space-y-3 ring-1 ring-white/10">
       <Link href={eventPath(match.id)} className="font-semibold underline">
         {match.title}
       </Link>

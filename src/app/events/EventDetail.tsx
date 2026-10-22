@@ -480,7 +480,7 @@ export default function EventDetail() {
         <a href="#presencia">Presencia</a>
         <a href="#resultado">Resultado</a>
       </nav>
-      <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+      <div className="mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">{event.title}</h1>
         {event.simulation_owner_id && <p className="mt-3 rounded-xl bg-amber-500/10 p-3">Mesa de prueba: el ELO real no cambia. <Link className="underline" href={`/simulator/?id=${id}`}>Abrir controles del simulador</Link></p>}
         <p className="mt-2 text-sm text-white/70">
@@ -593,7 +593,7 @@ export default function EventDetail() {
         {isCompetitive && !isFinished && !isDisputed && (
           <div
             id="presencia"
-            className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+            className="mt-6 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
           >
             <p className="font-semibold text-mm-card">
               Presencia validada (competitiva)
@@ -659,7 +659,7 @@ export default function EventDetail() {
         )}
 
         {isNeedPartner && (
-          <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div className="mt-6 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
             <div className="flex mm-stack items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-mm-card">
@@ -743,7 +743,7 @@ export default function EventDetail() {
       </div>
       {/* RESULT SECTION */}
       {resultNotice && (
-        <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="mt-6 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <p className="text-sm text-white/80">{resultNotice}</p>
         </div>
       )}
@@ -864,7 +864,7 @@ export default function EventDetail() {
       )}
 
       {isPendingWithoutParticipation && (
-        <div className="mt-6 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+        <div className="mt-6 mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
           <p className="font-bold text-mm-card text-lg">Resultado pendiente</p>
           <p className="mt-1 text-sm text-white/70">
             Esta cuenta no figura como participante en esta partida.
@@ -936,7 +936,7 @@ function ReportForm({
   };
 
   return (
-    <div className="mt-6 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+    <div className="mt-6 mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
       <h3 className="text-lg font-bold text-mm-card">Reportar Resultado</h3>
       <p className="text-sm text-white/60 mb-4">
         Reporta el resultado desde tu equipo. El sistema lo cruza con el reporte
@@ -1065,7 +1065,7 @@ function TeamBox({
   footer: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+    <div className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
       <h2 className="font-semibold text-mm-card">{name}</h2>
 
       <ul className="mt-2 space-y-1">

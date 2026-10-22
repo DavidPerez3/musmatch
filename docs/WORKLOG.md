@@ -438,3 +438,11 @@ Nueva sección Piloto e incidencias: guía de amistosa y competitiva, incorporac
 Validación: 73 pruebas backend/Edge/worker estándar y drift, 68 de navegador, tres de exportación, lint/TS/build. En Supabase, inscripción, lectura, reporte, revisión y aislamiento entre cuentas verificados con rollback. La CLI generó el archivo local, pero la revisión automática bloqueó su intento de telemetría a PostHog; se continuó con SQL local y el conector, sin autorizar telemetría.
 
 Piloto presencial y aceptación pendientes de la quedada; producción pública y operativa siguen abiertas. Guía y criterios en PHASE_6_PILOT.md.
+
+## 2026-10-22 — Visual: tapete y naipes
+
+- Unifica superficies de toda la app con paneles de verde profundo, textura de tapete CSS, bordes cálidos, botones dorados y títulos con tipografía de naipe (fuentes del sistema, sin descargas).
+- Portada con ilustración SVG propia de baraja española, filtros accesibles, tarjetas en dos columnas en escritorio y plazas representadas como cartas decorativas; fechas en español y títulos de dos líneas.
+- Mejora navegación, formularios, estados vacíos, acceso, ranking (primeros puestos y posición propia), detalle, perfil, administración, avisos, simulador y piloto mediante estilos compartidos. Mantiene el botón oficial blanco de Google.
+- No cambia contratos, RPC, permisos, reglas, ELO ni flujo de notificaciones. Respeta áreas seguras, foco visible, contraste aumentado y movimiento reducido.
+- Validación: lint, tipos, 73 pruebas de lógica/backend, 3 de exportación y 68 de navegador. Capturas revisadas con datos sintéticos, en móvil y escritorio; cobertura responsive de 320, 390, 768, 844, 1024 y 1440 px.

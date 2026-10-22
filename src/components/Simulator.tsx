@@ -97,7 +97,7 @@ function BotCard({
     : 0;
   return (
     <article
-      className="rounded-2xl bg-white/5 p-4 space-y-3 ring-1 ring-white/10"
+      className="mm-panel rounded-2xl bg-white/5 p-4 space-y-3 ring-1 ring-white/10"
       aria-label={`Mock ${player.slot}`}
     >
       <h3 className="font-semibold break-words">
@@ -409,7 +409,7 @@ export default function Simulator() {
       ) : (
         enabled && (
           <>
-            <section className="mt-5 rounded-2xl bg-white/5 p-4 space-y-3">
+            <section className="mt-5 mm-panel rounded-2xl bg-white/5 p-4 space-y-3">
               <h2 className="text-xl font-semibold">Nueva mesa de prueba</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <label>
@@ -744,7 +744,7 @@ export default function Simulator() {
                     Resolución: {current.event.result_resolution_reason}
                   </p>
                 )}
-                <section className="mt-6 rounded-2xl bg-white/5 p-4">
+                <section className="mt-6 mm-panel rounded-2xl bg-white/5 p-4">
                   <h2 className="text-xl font-semibold">
                     Clasificación simulada
                   </h2>

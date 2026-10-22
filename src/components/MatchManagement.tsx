@@ -137,7 +137,7 @@ export default function MatchManagement({
     else await onChange();
   }
   return (
-    <section className="mt-5 space-y-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+    <section className="mt-5 space-y-3 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
       <h2 className="font-semibold">Lugar y organización</h2>
       {location ? (
         <>

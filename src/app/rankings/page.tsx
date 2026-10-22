@@ -34,7 +34,7 @@ export default function RankingsPage() {
     <h1 className="font-bold">Ranking</h1>
     <p className="mt-2 mb-6 text-sm text-white/60">Los 50 jugadores con más ELO. Las amistosas no modifican tu nivel.</p>
     {loading ? <p role="status">Cargando ranking…</p> : !myUserId ? <div className="mm-empty"><p className="mb-4">Entra para consultar la clasificación.</p><Link href="/login" className="btn-primary mx-auto max-w-xs">Entrar</Link></div> : error ? <p role="alert" className="mm-empty">No hemos podido cargar el ranking. Comprueba tu conexión y vuelve a intentarlo.</p> : rankings.length === 0 ? <p className="mm-empty">Todavía no hay jugadores en el ranking.</p> : <ol className="mm-ranking-list" aria-label="Clasificación por ELO">
-      {rankings.map((user, index) => <li key={user.id} className={`mm-ranking-row ${user.id === myUserId ? "is-me" : ""}`}>
+      {rankings.map((user, index) => <li key={user.id} className={`mm-ranking-row ${user.id === myUserId ? "is-me" : ""} ${index < 3 ? "is-podium" : ""}`}>
         <span className="mm-ranking-number" aria-label={`Puesto ${index + 1}`}>{`#${index + 1}`}</span>
         <div className="min-w-0">
           <p className="font-semibold">{user.username || "Jugador"}{user.id === myUserId && <span className="ml-2 text-xs text-mm-gold">Tú</span>}</p>

@@ -46,11 +46,11 @@ function EventCard({ e, badge }: { e: MyEvent; badge: string }) {
   return (
     <Link
       href={eventPath(e.id)}
-      className="block rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10"
+      className="mm-match-card block rounded-2xl p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-lg font-semibold text-mm-card">
+          <h3 className="mm-match-title text-lg font-semibold text-mm-card">
             {e.title}
           </h3>
           <p className="mt-1 text-sm text-white/70">
@@ -193,7 +193,7 @@ export default function MyMatchesPage() {
       {loading && <p className="mt-6 text-white/70">Cargando...</p>}
 
       {!loading && errorMsg && (
-        <div className="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="mt-6 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <p className="font-semibold text-mm-card">
             Error cargando tus partidas
           </p>

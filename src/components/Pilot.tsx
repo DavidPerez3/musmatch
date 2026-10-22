@@ -250,7 +250,7 @@ export default function Pilot() {
         </p>
       )}
       <section
-        className="my-5 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+        className="my-5 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
         aria-label="Guía del piloto"
       >
         <h2 className="text-xl font-semibold">Antes de quedar</h2>
@@ -286,7 +286,7 @@ export default function Pilot() {
         </p>
       </section>
       <section
-        className="my-5 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+        className="my-5 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
         aria-label="Partidas del piloto"
       >
         <h2 className="text-xl font-semibold">Partidas en seguimiento</h2>
@@ -432,7 +432,7 @@ export default function Pilot() {
       </section>
       <section
         id="reportar-incidencia"
-        className="my-5 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+        className="my-5 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
         aria-label="Comunicar una incidencia"
       >
         <h2 className="text-xl font-semibold">¿Algo no ha funcionado?</h2>

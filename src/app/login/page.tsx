@@ -131,8 +131,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mm-page max-w-md">
-      <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+    <main className="mm-page mm-auth-page max-w-md">
+      <div className="mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+        <p className="mm-eyebrow">El mus empieza aquí</p>
         <h1 className="text-2xl font-bold text-mm-card">MusMatch</h1>
         <p className="mt-1 text-sm text-white/70">
           {tab === "login" ? "Entra a tu cuenta" : "Crea tu cuenta"}
