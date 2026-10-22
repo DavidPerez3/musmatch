@@ -224,3 +224,5 @@ body {
 .mm-type-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #9ac9a0; flex-shrink: 0; }
 .mm-type-badge.is-competitive::before { background: var(--mm-gold); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+@media (max-width: 359px) { .mm-table-cards { display: none; } .mm-hero-content > div:first-child { padding-right: 0; } }

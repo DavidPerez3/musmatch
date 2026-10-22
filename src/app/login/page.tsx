@@ -8,9 +8,11 @@ import { supabase } from "@/lib/supabaseClient";
 
 function Eye({ open }: { open: boolean }) {
   return (
-    <span className="select-none text-white/70">
-      {open ? "🙈" : "👁️"}
-    </span>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-white/70">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+      {open && <path d="m3 3 18 18" />}
+    </svg>
   );
 }
 

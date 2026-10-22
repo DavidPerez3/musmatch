@@ -261,7 +261,7 @@ export default function CreateEventPage() {
                     : "bg-white/5 ring-white/10 hover:bg-white/10"
                 } `}
               >
-                <p className="font-semibold text-mm-card">🟢 Amistosa</p>
+                <p className="mm-type-badge font-semibold text-mm-card">Amistosa</p>
                 <p className="mt-1 text-sm text-white/70">
                   Para jugar con calma. No afecta al ELO.
                 </p>
@@ -277,7 +277,7 @@ export default function CreateEventPage() {
                     : "bg-white/5 ring-white/10 hover:bg-white/10"
                 } `}
               >
-                <p className="font-semibold text-mm-card">🔴 Competitiva</p>
+                <p className="mm-type-badge is-competitive font-semibold text-mm-card">Competitiva</p>
                 <p className="mt-1 text-sm text-white/70">
                   Se registrará el resultado y afectará al ELO.
                 </p>

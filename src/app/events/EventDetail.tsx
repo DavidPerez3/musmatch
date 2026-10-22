@@ -494,8 +494,8 @@ export default function EventDetail() {
         )}
 
         <div className="mt-2 flex flex-wrap gap-2">
-          <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
-            {event.match_type === "FRIENDLY" ? "🟢 Amistosa" : "🔴 Competitiva"}
+          <span className={`mm-type-badge ${event.match_type === "COMPETITIVE" ? "is-competitive" : ""} rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10`}>
+            {event.match_type === "FRIENDLY" ? "Amistosa" : "Competitiva"}
           </span>
           <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
             {event.pair_mode === "FIXED_PAIR"
