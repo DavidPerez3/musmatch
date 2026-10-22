@@ -114,7 +114,7 @@ export default function UsersPage() {
                         return (
                             <div
                                 key={user.id}
-                                className="flex mm-stack items-center justify-between rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+                                className="flex mm-stack items-center justify-between mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
                             >
                                 <div>
                                     <h3 className="font-semibold text-mm-card">

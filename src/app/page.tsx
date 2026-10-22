@@ -5,6 +5,7 @@ import { eventPath } from "@/lib/paths";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import TableCards from "@/components/TableCards";
 import { supabase } from "@/lib/supabaseClient";
 
 type MatchType = "FRIENDLY" | "COMPETITIVE";
@@ -38,7 +39,7 @@ type Filters = {
 };
 
 function labelMatchType(t: MatchType) {
-  return t === "FRIENDLY" ? "🟢 Amistosa" : "🔴 Competitiva";
+  return t === "FRIENDLY" ? "Amistosa" : "Competitiva";
 }
 
 function labelPairMode(m: PairMode) {
@@ -148,8 +149,9 @@ export default function Home() {
 
   return (
     <main className="mm-page max-w-5xl">
-      <header className="mb-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="mm-home-hero mb-6">
+        <TableCards />
+        <div className="mm-hero-content">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-mm-gold">
               A la mesa
@@ -162,18 +164,18 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="mm-hero-actions flex flex-wrap gap-2">
             <button
               aria-expanded={showFilters}
               aria-controls="filtros"
               onClick={() => setShowFilters(!showFilters)}
-              className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-mm-card hover:bg-white/20"
+              className="btn-secondary w-auto! text-sm"
             >
               Filtros {showFilters ? "−" : "+"}
             </button>
             <Link
               href="/create"
-              className="rounded-xl bg-mm-gold px-4 py-2 text-center font-semibold text-mm-bg hover:opacity-90"
+              className="btn-primary w-auto! text-sm"
             >
               Crear partida
             </Link>
@@ -184,7 +186,7 @@ export default function Home() {
         {showFilters && (
           <div
             id="filtros"
-            className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+            className="relative mt-6 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Location */}
@@ -414,7 +416,7 @@ export default function Home() {
       {loading && <p className="text-white/70">Cargando partidas…</p>}
 
       {!loading && errorMsg && (
-        <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <p className="text-mm-card font-semibold">Error cargando partidas</p>
 
           <p className="mt-2 text-sm text-white/70">
@@ -443,7 +445,7 @@ export default function Home() {
         </p>
       )}
 
-      <div className="space-y-3">
+      <div className="mm-match-grid">
         {filteredEvents.map((e) => {
           const maxPlayers = 4;
           const faltan = Math.max(0, maxPlayers - e.players_count);
@@ -452,21 +454,21 @@ export default function Home() {
             <Link
               key={e.id}
               href={eventPath(e.id)}
-              className="block rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10"
+              className="mm-match-card block rounded-2xl p-5"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold text-mm-card">
+                  <h2 className="mm-match-title text-lg font-semibold text-mm-card">
                     {e.title}
                   </h2>
                   <p className="mt-1 text-sm text-white/70">
-                    {new Date(e.starts_at).toLocaleString()} ·{" "}
+                    {new Date(e.starts_at).toLocaleString("es-ES", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"})} ·{" "}
                     {e.location_text ?? "Sin ubicación"}
                   </p>
 
                   <p className="mt-2 text-xs text-mm-gold">{rulesSummary(e)}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
+                    <span className={`mm-type-badge ${e.match_type === "COMPETITIVE" ? "is-competitive" : ""} rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10`}>
                       {labelMatchType(e.match_type)}
                     </span>
                     <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-mm-card ring-1 ring-white/10">
@@ -475,7 +477,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="shrink-0 text-left sm:text-right">
+                <div className="mm-seat-summary shrink-0">
+                  <div className="mm-seats" aria-hidden="true">{Array.from({length:4},(_,i)=><span key={i} className={i < e.players_count ? "is-filled" : ""} />)}</div>
                   <p className="text-sm font-medium text-mm-card">
                     {e.players_count}/4
                   </p>

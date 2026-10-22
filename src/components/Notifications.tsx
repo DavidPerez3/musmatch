@@ -219,7 +219,7 @@ export default function Notifications() {
         </p>
       )}
       <section
-        className="mt-5 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+        className="mt-5 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
         aria-label="Notificaciones push"
       >
         <h2 className="text-xl font-semibold">
@@ -359,7 +359,7 @@ export default function Notifications() {
         )}
       </section>
       <section
-        className="mt-5 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+        className="mt-5 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
         aria-label="Preferencias de avisos"
       >
         <h2 className="text-xl font-semibold">Qué quieres recibir</h2>

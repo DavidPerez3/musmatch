@@ -134,7 +134,7 @@ export default function MatchLocation({
     );
   }
   return (
-    <fieldset className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 space-y-3">
+    <fieldset className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 space-y-3">
       <legend className="font-semibold">Lugar de la partida</legend>
       <label className="block">
         Tipo de lugar

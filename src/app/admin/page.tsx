@@ -202,7 +202,7 @@ export default function AdminPage() {
                 ) : (
                     <div className="mt-4 space-y-3">
                         {presenceOverview.map((row) => (
-                            <div key={row.event_id} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                            <div key={row.event_id} className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
                                 <div className="flex mm-stack items-start justify-between gap-4">
                                     <div>
                                         <h3 className="font-semibold text-mm-card">{row.title}</h3>
@@ -254,7 +254,7 @@ export default function AdminPage() {
                         {searchResults.map((user) => (
                             <div
                                 key={user.id}
-                                className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+                                className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
                             >
                                 <div className="flex mm-stack items-start justify-between gap-4">
                                     <div>

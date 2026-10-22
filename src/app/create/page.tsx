@@ -199,7 +199,7 @@ export default function CreateEventPage() {
 
   return (
     <main className="mm-page max-w-2xl">
-      <div className="mt-4 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+      <div className="mt-4 mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">Crear partida</h1>
         <p className="mt-1 text-sm text-white/70">
           El mus siempre es{" "}
@@ -248,7 +248,7 @@ export default function CreateEventPage() {
           <MatchLocation value={location} onChange={setLocation} publicLabel={locationText} onPublicLabel={setLocationText}/>
 
           {/* Tipo */}
-          <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
             <p className="font-semibold text-mm-card">Tipo</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <button
@@ -261,7 +261,7 @@ export default function CreateEventPage() {
                     : "bg-white/5 ring-white/10 hover:bg-white/10"
                 } `}
               >
-                <p className="font-semibold text-mm-card">🟢 Amistosa</p>
+                <p className="mm-type-badge font-semibold text-mm-card">Amistosa</p>
                 <p className="mt-1 text-sm text-white/70">
                   Para jugar con calma. No afecta al ELO.
                 </p>
@@ -277,7 +277,7 @@ export default function CreateEventPage() {
                     : "bg-white/5 ring-white/10 hover:bg-white/10"
                 } `}
               >
-                <p className="font-semibold text-mm-card">🔴 Competitiva</p>
+                <p className="mm-type-badge is-competitive font-semibold text-mm-card">Competitiva</p>
                 <p className="mt-1 text-sm text-white/70">
                   Se registrará el resultado y afectará al ELO.
                 </p>
@@ -285,7 +285,7 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          <fieldset className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <fieldset className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
             <legend className="px-1 font-semibold">Reglas y formato</legend>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -376,7 +376,7 @@ export default function CreateEventPage() {
           </fieldset>
 
           {/* Parejas */}
-          <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
             <p className="font-semibold text-mm-card">Parejas</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <button
@@ -415,7 +415,7 @@ export default function CreateEventPage() {
 
           {/* Friend Selector - only for FIXED_PAIR */}
           {pairMode === "FIXED_PAIR" && (
-            <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+            <div className="mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
               <p className="font-semibold text-mm-card">
                 Selecciona tu compañero
               </p>

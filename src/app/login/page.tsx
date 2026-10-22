@@ -8,9 +8,11 @@ import { supabase } from "@/lib/supabaseClient";
 
 function Eye({ open }: { open: boolean }) {
   return (
-    <span className="select-none text-white/70">
-      {open ? "🙈" : "👁️"}
-    </span>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-white/70">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+      {open && <path d="m3 3 18 18" />}
+    </svg>
   );
 }
 
@@ -131,8 +133,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mm-page max-w-md">
-      <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+    <main className="mm-page mm-auth-page max-w-md">
+      <div className="mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+        <p className="mm-eyebrow">El mus empieza aquí</p>
         <h1 className="text-2xl font-bold text-mm-card">MusMatch</h1>
         <p className="mt-1 text-sm text-white/70">
           {tab === "login" ? "Entra a tu cuenta" : "Crea tu cuenta"}

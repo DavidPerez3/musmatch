@@ -88,7 +88,7 @@ export default function InvitationInbox() {
   }
   return (
     <section
-      className="my-5 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
+      className="my-5 mm-panel rounded-2xl bg-white/5 p-4 ring-1 ring-white/10"
       aria-label="Invitaciones a partidas"
     >
       <div className="grid gap-2 sm:grid-cols-[1fr_auto]">

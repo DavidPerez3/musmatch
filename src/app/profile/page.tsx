@@ -322,7 +322,7 @@ export default function ProfilePage() {
 
   return (
     <main className="mm-page max-w-xl">
-      <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
+      <div className="mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <div className="flex flex-wrap items-center gap-3">
           {profile?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -347,7 +347,7 @@ export default function ProfilePage() {
             <p className="text-sm text-white/70">{email}</p>
           </div>
 
-          <div className="w-full sm:w-auto sm:ml-auto rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+          <div className="w-full sm:w-auto sm:ml-auto mm-panel rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
             <p className="text-xs text-white/60">ELO</p>
             <p className="text-lg font-bold text-mm-card">{profile?.elo_rating ?? 1000}</p>
           </div>
