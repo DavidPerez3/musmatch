@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { safeReturnPath } from "@/lib/authReturn";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
@@ -265,6 +266,8 @@ export default function ProfilePage() {
       return;
     }
 
+    const next = safeReturnPath(new URLSearchParams(window.location.search).get("next"));
+    if (next) { router.replace(next); return; }
     setMsg("✅ Perfil actualizado.");
     await load();
   }

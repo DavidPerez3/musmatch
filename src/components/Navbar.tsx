@@ -156,6 +156,7 @@ export default function Navbar() {
           <details className="mm-account-menu" key={pathname}>
             <summary aria-label="Más opciones"><NavIcon name="people" /></summary>
             <div className="mm-account-panel">
+              <Link href="/help/">Ayuda y preguntas frecuentes</Link>
               <Link href="/users">Amigos y jugadores</Link>
               <button onClick={() => window.dispatchEvent(new Event("musmatch-check-update"))}>Buscar actualizaciones</button>
               {signedIn && <><Link href="/notifications">Avisos y notificaciones</Link><Link href="/pilot">Piloto e incidencias</Link></>}
