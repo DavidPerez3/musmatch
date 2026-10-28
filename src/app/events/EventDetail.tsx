@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { eventPath } from "@/lib/paths";
+import ShareMatch from "@/components/ShareMatch";
 import MatchManagement from "@/components/MatchManagement";
 import Link from "next/link";
 import PresenceCheckIn from "@/components/PresenceCheckIn";
@@ -57,12 +59,12 @@ type ProfileMini = {
   elo_rating: number;
 };
 
-async function requireUsername(router: ReturnType<typeof useRouter>) {
+async function requireUsername(router: ReturnType<typeof useRouter>, id: string) {
   const { data } = await supabase.auth.getUser();
   const user = data.user;
 
   if (!user) {
-    router.push("/login");
+    router.push(`/login/?next=${encodeURIComponent(eventPath(id))}`);
     return null;
   }
 
@@ -73,7 +75,7 @@ async function requireUsername(router: ReturnType<typeof useRouter>) {
     .single();
 
   if (!profile?.username || profile.username.trim().length < 3) {
-    router.push("/profile");
+    router.push(`/profile/?next=${encodeURIComponent(eventPath(id))}`);
     return null;
   }
 
@@ -106,7 +108,7 @@ export default function EventDetail() {
     if (!id) return;
     setErrorMsg(null);
 
-    const uid = await requireUsername(router);
+    const uid = await requireUsername(router, id);
     if (!uid) return;
     setMe(uid);
 
@@ -394,20 +396,18 @@ export default function EventDetail() {
 
   if (!id)
     return (
-      <p className="text-white/70">
-        Selecciona una partida desde el inicio o Mis partidas.
-      </p>
+      <main className="mm-page max-w-2xl"><h1>Elige tu mesa</h1><p className="mt-3 text-white/70">Selecciona una partida desde el inicio o Mis partidas.</p><Link href="/" className="mm-text-link">Buscar partidas</Link></main>
     );
 
   if (errorMsg && !event)
     return (
-      <p role="alert" className="text-red-300">
-        {errorMsg}
-      </p>
+      <main className="mm-page max-w-2xl"><h1>No pudimos abrir esta mesa</h1><p role="alert" className="mt-3 text-white/80">
+        No se ha podido abrir esta partida. Comprueba tu sesión, tus permisos y el enlace.
+      </p><Link href="/" className="mm-text-link">Buscar otras partidas</Link></main>
     );
 
   if (loading || !event || event.id !== id) {
-    return <p className="p-6 text-white/70">Cargando partida…</p>;
+    return <p role="status" className="p-6 text-white/70">Cargando partida…</p>;
   }
 
   if (event.status === "CANCELLED") return <main className="mm-page max-w-3xl"><h1 className="text-2xl font-bold">{event.title}</h1><p className="mt-3 text-amber-200">Partida cancelada</p><p className="mt-2 break-words">{event.result_resolution_reason}</p><MatchRulesCard rules={event}/><MatchManagement key={`${id}:${myParticipant?.id}:${event.status}:${event.result_status}`} id={id} owner={event.created_by===me} active={false} onChange={load}/></main>;
@@ -482,6 +482,7 @@ export default function EventDetail() {
       </nav>
       <div className="mm-panel rounded-2xl bg-white/5 p-6 ring-1 ring-white/10">
         <h1 className="text-2xl font-bold text-mm-card">{event.title}</h1>
+        {!event.simulation_owner_id && <ShareMatch key={id} id={id} />}
         {event.simulation_owner_id && <p className="mt-3 rounded-xl bg-amber-500/10 p-3">Mesa de prueba: el ELO real no cambia. <Link className="underline" href={`/simulator/?id=${id}`}>Abrir controles del simulador</Link></p>}
         <p className="mt-2 text-sm text-white/70">
           {new Date(event.starts_at).toLocaleString()} ·{" "}

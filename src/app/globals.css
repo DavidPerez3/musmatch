@@ -226,3 +226,27 @@ body {
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
 
 @media (max-width: 359px) { .mm-table-cards { display: none; } .mm-hero-content > div:first-child { padding-right: 0; } }
+
+/* Public help and sharing use the same tabletop surfaces as the app. */
+.mm-footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 20px; margin-top:40px; padding-top:16px; border-top:1px solid #e8bd6726; color:#c9d6cbbb; font-size:12px; }
+.mm-footer nav { display:flex; flex-wrap:wrap; gap:4px 16px; }
+.mm-footer a { display:inline-flex; align-items:center; min-height:44px; }
+.mm-text-link { color:var(--mm-gold); text-decoration:underline; text-underline-offset:4px; display:inline-flex; align-items:center; min-height:44px; padding-inline:4px; }
+.mm-onboarding { border-left:2px solid #e8bd6755; padding:4px 0 4px 16px; font-size:13px; color:#d5dfd3; }
+.mm-onboarding b { display:inline; color:var(--mm-card); font-weight:600; }
+.mm-share { border-bottom:1px solid #ffffff14; padding-bottom:16px; }
+.mm-share [role=status]:empty { display:none; }
+.mm-faq { display:grid; gap:10px; }
+.mm-faq details { border:1px solid #e9d7a529; border-radius:16px; background:#0a3026; scroll-margin-top:100px; }
+.mm-faq summary { padding:16px 18px; font-weight:600; min-height:52px; }
+.mm-faq details[open] summary { color:var(--mm-gold); border-bottom:1px solid #ffffff14; }
+.mm-faq details > div { padding:16px 18px; color:#d5dfd3; font-size:14px; line-height:1.75; }
+.mm-faq a, .mm-prose a { color:var(--mm-gold); text-decoration:underline; text-underline-offset:3px; }
+.mm-prose { line-height:1.8; }
+.mm-prose h2 { margin-top:28px; margin-bottom:8px; color:var(--mm-card); font-size:18px; font-weight:650; }
+.mm-prose p { margin-bottom:14px; color:#d5dfd3; font-size:14px; }
+.mm-legal-pending { margin-block:24px; padding:18px; border:1px solid #e8bd6750; border-radius:16px; background:#e8bd670a; color:#f6e4b8; font-size:14px; }
+.mm-error-table .mm-hero-content { max-width:66%; }
+@media (max-width:639px) { .mm-error-table .mm-table-cards { opacity:.25; } .mm-error-table .mm-hero-content { max-width:100%; } .mm-error-table h1 { max-width:100%; } }
+
+@media (max-width:1023px) { html { scroll-padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px)); } }

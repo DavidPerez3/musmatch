@@ -1,4 +1,4 @@
-# Roadmap vigente — 2026-10-21
+# Roadmap vigente — 2026-10-28
 
 Esta secuencia sustituye la numeración del plan histórico de mayo que se conserva más abajo.
 
@@ -11,8 +11,9 @@ Esta secuencia sustituye la numeración del plan histórico de mayo que se conse
 | 4 | Invitaciones, ubicaciones OSM/privadas y revisión justificada de disputas | Implementada; piloto real pendiente |
 | 5 | Simulador de jugadores, avisos y pulido móvil/PWA | Implementada: simulador, avisos/push y actualización PWA; piloto real pendiente |
 | 6 | Piloto con usuarios reales y preparación del MVP público | En curso: guía, seguimiento e incidencias implementados; quedada y aceptación pendientes |
+| 7 | Experiencia inicial, ayuda, compartir enlaces, accesibilidad y SEO estático | Implementada; datos legales, dominio/robots raíz y aceptación del piloto pendientes |
 
-Simulador: [PHASE_5_SIMULATOR.md](PHASE_5_SIMULATOR.md). Avisos y push: [PHASE_5_NOTIFICATIONS.md](PHASE_5_NOTIFICATIONS.md). Actualizaciones y conexión: [PHASE_5_PWA.md](PHASE_5_PWA.md). Piloto: [PHASE_6_PILOT.md](PHASE_6_PILOT.md).
+Simulador: [PHASE_5_SIMULATOR.md](PHASE_5_SIMULATOR.md). Avisos y push: [PHASE_5_NOTIFICATIONS.md](PHASE_5_NOTIFICATIONS.md). Actualizaciones y conexión: [PHASE_5_PWA.md](PHASE_5_PWA.md). Piloto: [PHASE_6_PILOT.md](PHASE_6_PILOT.md). Experiencia y difusión: [PHASE_7_DISCOVERY.md](PHASE_7_DISCOVERY.md).
 
 Ver [PHASE_0.md](PHASE_0.md), [PHASE_1.md](PHASE_1.md), [PHASE_2.md](PHASE_2.md) [PHASE_3.md](PHASE_3.md) y [PHASE_4.md](PHASE_4.md) para alcance, pruebas y limitaciones. No se considera terminada una función porque exista una pantalla: se exige validación de permisos, reglas y flujo real.
 

@@ -446,3 +446,11 @@ Piloto presencial y aceptación pendientes de la quedada; producción pública y
 - Mejora navegación, formularios, estados vacíos, acceso, ranking (primeros puestos y posición propia), detalle, perfil, administración, avisos, simulador y piloto mediante estilos compartidos. Mantiene el botón oficial blanco de Google.
 - No cambia contratos, RPC, permisos, reglas, ELO ni flujo de notificaciones. Respeta áreas seguras, foco visible, contraste aumentado y movimiento reducido.
 - Validación: lint, tipos, 73 pruebas de lógica/backend, 3 de exportación y 68 de navegador. Capturas revisadas con datos sintéticos, en móvil y escritorio; cobertura responsive de 320, 390, 768, 844, 1024 y 1440 px.
+
+## 2026-10-28 — Fase 7: experiencia inicial, ayuda, difusión y SEO
+
+Auditoría de main `e13865f`: ya había CTA de creación, navegación móvil, reglas, ELO, presencia y notificaciones. Se añaden introducción compacta, FAQ contrastada con SQL, 404 temática, compartir enlaces de texto con privacidad, retorno al destino tras acceso/perfil, páginas legales provisionales y pie discreto. SEO estático con títulos por pantalla, OG genérico, canonical público y noindex para cuentas/partidas; sitemap de inicio+ayuda y limitación del robots de proyecto documentada. Sin backend/migraciones, tarjetas generadas, analítica, mapas nuevos ni servicios de pago. Diseño tapete/baraja conservado.
+
+Detalle de decisiones, pruebas y pendientes legales/hosting: `PHASE_7_DISCOVERY.md`. La validación automática no sustituye el piloto físico ni completa los datos legales pendientes.
+
+Verificación local de fase 7: lint y tipos correctos; 75 pruebas de lógica/backend, 7 de exportación y 86 de interfaz, incluidas 18 nuevas de experiencia/difusión. Revisión visual de invitado, ayuda y 404 en móvil/escritorio; build estático conserva ámbito PWA.

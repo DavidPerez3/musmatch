@@ -96,7 +96,7 @@ export default function CreateEventPage() {
       const user = data.user;
 
       if (!user) {
-        router.push("/login");
+        router.push("/login/?next=%2Fcreate%2F");
         return;
       }
 
@@ -118,7 +118,7 @@ export default function CreateEventPage() {
       setProfile(prof as ProfileMini);
 
       if (!prof?.username || prof.username.trim().length < 3) {
-        router.push("/profile");
+        router.push("/profile/?next=%2Fcreate%2F");
         return;
       }
 
